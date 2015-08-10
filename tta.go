@@ -18,19 +18,6 @@ type tta_fltst struct {
 	dl    [24]int32
 }
 
-func (fs *tta_fltst) init(data [8]byte, shift int32) {
-	fs.shift = shift
-	fs.round = 1 << uint32(shift-1)
-	fs.qm[0] = int32(data[0])
-	fs.qm[1] = int32(data[1])
-	fs.qm[2] = int32(data[2])
-	fs.qm[3] = int32(data[3])
-	fs.qm[4] = int32(data[4])
-	fs.qm[5] = int32(data[5])
-	fs.qm[6] = int32(data[6])
-	fs.qm[7] = int32(data[7])
-}
-
 type tta_adapt struct {
 	k0   uint32
 	k1   uint32
