@@ -51,40 +51,41 @@ type tta_fifo struct {
 
 type Decoder struct {
 	decoder      [MAX_NCH]tta_codec // decoder (1 per channel)
-	data         [8]int8            // decoder initialization data
+	data         [8]byte            // decoder initialization data
 	fifo         tta_fifo
-	decoder_last *tta_codec
-	password_set bool    // password protection flag
-	seek_table   *uint64 // the playing position table
-	format       uint32  // tta data format
-	rate         uint32  // bitrate (kbps)
-	offset       uint64  // data start position (header size, bytes)
-	frames       uint32  // total count of frames
-	depth        uint32  // bytes per sample
-	flen_std     uint32  // default frame length in samples
-	flen_last    uint32  // last frame length in samples
-	flen         uint32  // current frame length in samples
-	fnum         uint32  // currently playing frame index
-	fpos         uint32  // the current position in frame
+	decoder_len  int
+	password_set bool     // password protection flag
+	seek_allowed bool     // seek table flag
+	seek_table   []uint64 // the playing position table
+	format       uint32   // tta data format
+	rate         uint32   // bitrate (kbps)
+	offset       uint64   // data start position (header size, bytes)
+	frames       uint32   // total count of frames
+	depth        uint32   // bytes per sample
+	flen_std     uint32   // default frame length in samples
+	flen_last    uint32   // last frame length in samples
+	flen         uint32   // current frame length in samples
+	fnum         uint32   // currently playing frame index
+	fpos         uint32   // the current position in frame
 }
 
 type Encoder struct {
-	encoder      [MAX_NCH]tta_codec // encoder (1 per channel)
-	data         [8]int8            // encoder initialization data
-	fifo         tta_fifo
-	encoder_last *tta_codec
-	seek_table   *uint64 // the playing position table
-	format       uint32  // tta data format
-	rate         uint32  // bitrate (kbps)
-	offset       uint64  // data start position (header size, bytes)
-	frames       uint32  // total count of frames
-	depth        uint32  // bytes per sample
-	flen_std     uint32  // default frame length in samples
-	flen_last    uint32  // last frame length in samples
-	flen         uint32  // current frame length in samples
-	fnum         uint32  // currently playing frame index
-	fpos         uint32  // the current position in frame
-	shift_bits   uint32  // packing int to pcm
+	encoder     [MAX_NCH]tta_codec // encoder (1 per channel)
+	data        [8]byte            // encoder initialization data
+	fifo        tta_fifo
+	encoder_len int
+	seek_table  []uint64 // the playing position table
+	format      uint32   // tta data format
+	rate        uint32   // bitrate (kbps)
+	offset      uint64   // data start position (header size, bytes)
+	frames      uint32   // total count of frames
+	depth       uint32   // bytes per sample
+	flen_std    uint32   // default frame length in samples
+	flen_last   uint32   // last frame length in samples
+	flen        uint32   // current frame length in samples
+	fnum        uint32   // currently playing frame index
+	fpos        uint32   // the current position in frame
+	shift_bits  uint32   // packing int to pcm
 }
 
 type Callback func(uint32, uint32, uint32)

@@ -10,6 +10,10 @@ const (
 	MIN_BPS              = 16
 	MAX_NCH              = 6
 	TTA_FIFO_BUFFER_SIZE = 5120
+
+	// TTA audio format
+	TTA_FORMAT_SIMPLE    = 1
+	TTA_FORMAT_ENCRYPTED = 2
 )
 
 var ( // TTA_CODEC_STATUS

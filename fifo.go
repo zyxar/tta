@@ -91,6 +91,70 @@ func (s *tta_fifo) read_tta_header(info *tta_info) (uint32, error) {
 	return size, nil
 }
 
+func (s *tta_fifo) get_value(rice *tta_adapt) (value int32) {
+	if s.bcache^bit_mask[s.bcount] == 0 {
+		value += int32(s.bcount)
+		s.bcache = uint32(s.read_byte())
+		s.bcount = 8
+		for s.bcache == 0xFF {
+			value += 8
+			s.bcache = uint32(s.read_byte())
+		}
+	}
+
+	for (s.bcache & 1) != 0 {
+		value++
+		s.bcache >>= 1
+		s.bcount--
+	}
+	s.bcache >>= 1
+	s.bcount--
+
+	var level, k, tmp uint32
+	if value != 0 {
+		level = 1
+		k = rice.k1
+		value--
+	} else {
+		level = 0
+		k = rice.k0
+	}
+	if k != 0 {
+		for s.bcount < k {
+			tmp = uint32(s.read_byte())
+			s.bcache |= tmp << s.bcount
+			s.bcount += 8
+		}
+		value = (value << k) + int32(s.bcache&bit_mask[k])
+		s.bcache >>= k
+		s.bcount -= k
+		s.bcache &= bit_mask[s.bcount]
+	}
+	if level != 0 {
+		rice.sum1 += uint32(value) - (rice.sum1 >> 4)
+		if rice.k1 > 0 && rice.sum1 < shift_16[rice.k1] {
+			rice.k1--
+		} else if rice.sum1 > shift_16[rice.k1+1] {
+			rice.k1++
+		}
+		value += int32(bit_shift[rice.k0])
+	}
+
+	rice.sum0 += uint32(value) - (rice.sum0 >> 4)
+	if rice.k0 > 0 && rice.sum0 < shift_16[rice.k0] {
+		rice.k0--
+	} else if rice.sum0 > shift_16[rice.k0+1] {
+		rice.k0++
+	}
+	// ((x & 1)?((x + 1) >> 1):(-x >> 1))
+	if value&1 != 0 {
+		value = (value + 1) >> 1
+	} else {
+		value = -value >> 1
+	}
+	return
+}
+
 func (s *tta_fifo) write_start() {
 	s.pos = 0
 }
