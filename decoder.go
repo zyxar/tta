@@ -1,5 +1,10 @@
 package tta
 
+import (
+	"io"
+	"os"
+)
+
 func (this *Decoder) read_seek_table() bool {
 	if this.seek_table == nil {
 		return false
@@ -18,16 +23,18 @@ func (this *Decoder) set_password(pass string) {
 	this.password_set = true
 }
 
-func (this *Decoder) frame_init(frame uint32, seek_needed bool) error {
+func (this *Decoder) frame_init(frame uint32, seek_needed bool) (err error) {
 	if frame >= this.frames {
-		return nil
+		return
 	}
 	shift := flt_set[this.depth-1]
 	this.fnum = frame
 	if seek_needed && this.seek_allowed {
 		pos := this.seek_table[this.fnum]
-		if pos != 0 && this.fifo.io.Seek(int64(pos)) < 0 {
-			return TTA_SEEK_ERROR
+		if pos != 0 {
+			if _, err = this.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
+				return TTA_SEEK_ERROR
+			}
 		}
 		this.fifo.read_start()
 	}
@@ -43,10 +50,10 @@ func (this *Decoder) frame_init(frame uint32, seek_needed bool) error {
 	}
 	this.fpos = 0
 	this.fifo.reset()
-	return nil
+	return
 }
 
-func (this *Decoder) frame_reset(frame uint32, iocb io_callback) {
+func (this *Decoder) frame_reset(frame uint32, iocb io.ReadWriteSeeker) {
 	this.fifo.io = iocb
 	this.fifo.read_start()
 	this.frame_init(frame, false)
@@ -88,9 +95,11 @@ func (this *Decoder) init_set_info(info *tta_info) error {
 }
 
 func (this *Decoder) init_get_info(info *tta_info, pos uint64) (err error) {
-	if pos != 0 && this.fifo.io.Seek(int64(pos)) < 0 {
-		err = TTA_SEEK_ERROR
-		return
+	if pos != 0 {
+		if _, err = this.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
+			err = TTA_SEEK_ERROR
+			return
+		}
 	}
 	this.fifo.read_start()
 	var p uint32

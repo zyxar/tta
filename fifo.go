@@ -2,7 +2,8 @@ package tta
 
 func (s *tta_fifo) read_byte() (v byte) {
 	if s.pos >= s.end {
-		s.end = s.io.Read(s.buffer[:])
+		v, _ := s.io.Read(s.buffer[:]) // FIXME: handle this error
+		s.end = int32(v)
 		s.pos = 0
 	}
 	s.crc = crc32_table[(s.crc^uint32(s.buffer[s.pos]))&0xFF] ^ (s.crc >> 8)
@@ -162,7 +163,7 @@ func (s *tta_fifo) write_start() {
 func (s *tta_fifo) write_done() error {
 	buffer_size := s.pos
 	if buffer_size > 0 {
-		if s.io.Write(s.buffer[:]) != buffer_size {
+		if n, err := s.io.Write(s.buffer[:]); err != nil || int32(n) != buffer_size {
 			return TTA_WRITE_ERROR
 		}
 	}
@@ -171,7 +172,7 @@ func (s *tta_fifo) write_done() error {
 
 func (s *tta_fifo) write_byte(v byte) error {
 	if s.pos == s.end {
-		if s.io.Write(s.buffer[:]) != TTA_FIFO_BUFFER_SIZE {
+		if n, err := s.io.Write(s.buffer[:]); err != nil || int32(n) != TTA_FIFO_BUFFER_SIZE {
 			return TTA_WRITE_ERROR
 		}
 		s.pos = 0

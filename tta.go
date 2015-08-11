@@ -1,5 +1,9 @@
 package tta
 
+import (
+	"io"
+)
+
 type tta_info struct {
 	format  uint32 // audio format
 	nch     uint32 // number of channels
@@ -46,7 +50,7 @@ type tta_fifo struct {
 	bcache uint32 // bit cache
 	crc    uint32
 	count  uint32
-	io     io_callback
+	io     io.ReadWriteSeeker
 }
 
 type Decoder struct {
@@ -89,8 +93,3 @@ type Encoder struct {
 }
 
 type Callback func(uint32, uint32, uint32)
-type io_callback interface {
-	Read(p []byte) int32
-	Write(p []byte) int32
-	Seek(offset int64) int64
-}
