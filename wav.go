@@ -1,6 +1,7 @@
 package tta
 
 import (
+	"errors"
 	"os"
 	"reflect"
 	"unsafe"
@@ -16,6 +17,8 @@ const (
 	WAVE_FORMAT_EXTENSIBLE = 0xFFFE
 	PCM_BUFFER_LENGTH      = 5120
 )
+
+var PARTIAL_WRITTEN_ERROR = errors.New("partial written")
 
 type WAVE_hdr struct {
 	chunk_id        uint32
@@ -115,5 +118,25 @@ func (this *WAVE_hdr) Read(infile *os.File) (subchunk_size uint32, err error) {
 		}
 	}
 	subchunk_size = subchunk_hdr.subchunk_size
+	return
+}
+
+func (this *WAVE_hdr) Write(fd *os.File, size uint32) (err error) {
+	var write_len int
+	// Write WAVE header
+	if write_len, err = fd.Write(this.toSlice()); err != nil {
+		return
+	} else if write_len != int(unsafe.Sizeof(*this)) {
+		err = PARTIAL_WRITTEN_ERROR
+		return
+	}
+	// Write Subchunk header
+	subchunk_hdr := WAVE_subchunk_hdr{data_SIGN, size}
+	if write_len, err = fd.Write(subchunk_hdr.toSlice()); err != nil {
+		return
+	} else if write_len != int(unsafe.Sizeof(subchunk_hdr)) {
+		err = PARTIAL_WRITTEN_ERROR
+		return
+	}
 	return
 }
