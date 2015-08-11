@@ -1,9 +1,150 @@
 package tta
 
 import (
+	"encoding/binary"
 	"io"
 	"os"
 )
+
+func NewDecoder(iocb io.ReadWriteSeeker) *Decoder {
+	dec := Decoder{}
+	dec.fifo.io = iocb
+	return &dec
+}
+
+func write_buffer(src int32, p []byte, depth uint32) {
+	switch depth {
+	case 2:
+		binary.LittleEndian.PutUint16(p, uint16(0xFFFF&src))
+	case 1:
+		p[0] = byte(0xFF & src)
+	default:
+		binary.LittleEndian.PutUint32(p, uint32(0xFFFF&src))
+	}
+}
+
+func (this *Decoder) ProcessStream(out []byte, cb Callback) int32 {
+	var cache [MAX_NCH]int32
+	var value int32
+	var ret int32 = 0
+	i := 0
+	out_ := out[:]
+	for this.fpos < this.flen && len(out_) > 0 {
+		value = this.fifo.get_value(&this.decoder[i].rice)
+		// decompress stage 1: adaptive hybrid filter
+		this.decoder[i].fst.hybrid_filter_dec(&value)
+		// decompress stage 2: fixed order 1 prediction
+		value += ((this.decoder[i].prev * ((1 << 5) - 1)) >> 5) // ((x * ((1 << k) - 1)) >> k)
+		this.decoder[i].prev = value
+		cache[i] = value
+		if i < this.decoder_len-1 {
+			i++
+		} else {
+			if this.decoder_len == 1 {
+				write_buffer(value, out_, this.depth)
+				out_ = out_[this.depth:]
+			} else {
+				j := i
+				k := i - 1
+				cache[i] += cache[k] / 2
+				for k > 0 {
+					cache[k] = cache[j] - cache[k]
+					j--
+					k--
+				}
+				cache[k] = cache[j] - cache[k]
+				for k <= i {
+					write_buffer(cache[k], out_, this.depth)
+					out_ = out_[this.depth:]
+					k++
+				}
+			}
+			i = 0
+			this.fpos++
+			ret++
+		}
+		if this.fpos == this.flen {
+			// check frame crc
+			crc_flag := this.fifo.read_crc32()
+			if crc_flag {
+				for i := 0; i < len(out); i++ {
+					out[i] = 0
+				}
+				if !this.seek_allowed {
+					break
+				}
+			}
+			this.fnum++
+
+			// update dynamic info
+			this.rate = (this.fifo.count << 3) / 1070
+			if cb != nil {
+				cb(this.rate, this.fnum, this.frames)
+			}
+			if this.fnum == this.frames {
+				break
+			}
+			this.frame_init(this.fnum, crc_flag)
+		}
+	}
+	return ret
+}
+
+func (this *Decoder) ProcessFrame(in_size uint32, out []byte) int32 {
+	i := 0
+	var cache [MAX_NCH]int32
+	var value int32
+	var ret int32 = 0
+	out_ := out[:]
+	for this.fifo.count < in_size && len(out_) > 0 {
+		value = this.fifo.get_value(&this.decoder[i].rice)
+		// decompress stage 1: adaptive hybrid filter
+		this.decoder[i].fst.hybrid_filter_dec(&value)
+		// decompress stage 2: fixed order 1 prediction
+		value += ((this.decoder[i].prev * ((1 << 5) - 1)) >> 5)
+		this.decoder[i].prev = value
+		cache[i] = value
+		if i < this.decoder_len-1 {
+			i++
+		} else {
+			if this.decoder_len == 1 {
+				write_buffer(value, out_, this.depth)
+				out_ = out_[this.depth:]
+			} else {
+				j := i
+				k := i - 1
+				cache[i] += cache[k] / 2
+				for k > 0 {
+					cache[k] = cache[j] - cache[k]
+					j--
+					k--
+				}
+				cache[k] = cache[j] - cache[k]
+				for k <= i {
+					write_buffer(cache[k], out_, this.depth)
+					out_ = out_[this.depth:]
+					k++
+				}
+			}
+			i = 0
+			this.fpos++
+			ret++
+		}
+
+		if this.fpos == this.flen || this.fifo.count == in_size-4 {
+			// check frame crc
+			if this.fifo.read_crc32() {
+				for i := 0; i < len(out); i++ {
+					out[i] = 0
+				}
+			}
+			// update dynamic info
+			this.rate = (this.fifo.count << 3) / 1070
+			break
+		}
+	}
+	return ret
+}
 
 func (this *Decoder) read_seek_table() bool {
 	if this.seek_table == nil {
