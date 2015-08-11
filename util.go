@@ -20,3 +20,21 @@ func compute_key_digits(p []byte) [8]byte {
 		byte((crc_hi >> 24) & 0xFF),
 	}
 }
+
+func convert_password(src string) []byte {
+	dst := make([]byte, len(src))
+	for i := 0; i < len(src); i++ {
+		if src[i]&0xF0 == 0xF0 {
+			dst[i] = src[i] & 0x0F
+		} else if src[i]&0xE0 == 0xE0 {
+			dst[i] = src[i] & 0x1F
+		} else if src[i]&0xC0 == 0xC0 {
+			dst[i] = src[i] & 0x3F
+		} else if src[i]&0x80 == 0x80 {
+			dst[i] = src[i] & 0x7F
+		} else {
+			dst[i] = src[i]
+		}
+	}
+	return dst
+}

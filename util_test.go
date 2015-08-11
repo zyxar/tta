@@ -21,5 +21,22 @@ func TestComputeKeyDigits(t *testing.T) {
 			t.Errorf("compute_key_digits fail @ %d\n", i)
 		}
 	}
+}
 
+func TestConvertPassword(t *testing.T) {
+	var strs = [...]string{
+		"",
+		"1",
+		"AB",
+		"akljsdlfkja;oslduy 98283r7  qiweyr9823475&@^#U#$Y$"}
+	var slices = [...][]byte{
+		[]byte{},
+		[]byte{49},
+		[]byte{65, 66},
+		[]byte{97, 107, 108, 106, 115, 100, 108, 102, 107, 106, 97, 59, 111, 115, 108, 100, 117, 121, 32, 57, 56, 50, 56, 51, 114, 55, 32, 32, 113, 105, 119, 101, 121, 114, 57, 56, 50, 51, 52, 55, 53, 38, 64, 94, 35, 85, 35, 36, 89, 36}}
+	for i := 0; i < len(strs); i++ {
+		if bytes.Compare(slices[i], convert_password(strs[i])) != 0 {
+			t.Errorf("convert_password fail @ %v\n", strs[i])
+		}
+	}
 }
