@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	RIFF_SIGN = (0x46464952)
-	WAVE_SIGN = (0x45564157)
-	fmt_SIGN  = (0x20746D66)
-	data_SIGN = (0x61746164)
+	RIFF_SIGN = 0x46464952
+	WAVE_SIGN = 0x45564157
+	fmt_SIGN  = 0x20746D66
+	data_SIGN = 0x61746164
 
 	WAVE_FORMAT_PCM        = 1
 	WAVE_FORMAT_EXTENSIBLE = 0xFFFE
@@ -19,6 +19,7 @@ const (
 )
 
 var PARTIAL_WRITTEN_ERROR = errors.New("partial written")
+var PARTIAL_READ_ERROR = errors.New("partial read")
 
 type WAVE_hdr struct {
 	chunk_id        uint32
@@ -80,16 +81,23 @@ func (this *WAVE_ext_hdr) toSlice() []byte {
 	}))
 }
 
-func (this *WAVE_hdr) Read(infile *os.File) (subchunk_size uint32, err error) {
+func (this *WAVE_hdr) Read(fd *os.File) (subchunk_size uint32, err error) {
 	var default_subchunk_size uint32 = 16
 	b := this.toSlice()
+	var read_len int
 	// Read WAVE header
-	if _, err = infile.Read(b); err != nil {
+	if read_len, err = fd.Read(b); err != nil {
+		return
+	} else if read_len != len(b) {
+		err = PARTIAL_READ_ERROR
 		return
 	}
 	if this.audio_format == WAVE_FORMAT_EXTENSIBLE {
 		wave_hdr_ex := WAVE_ext_hdr{}
-		if _, err = infile.Read(wave_hdr_ex.toSlice()); err != nil {
+		if read_len, err = fd.Read(wave_hdr_ex.toSlice()); err != nil {
+			return
+		} else if read_len != int(unsafe.Sizeof(wave_hdr_ex)) {
+			err = PARTIAL_READ_ERROR
 			return
 		}
 		default_subchunk_size += uint32(unsafe.Sizeof(wave_hdr_ex))
@@ -99,7 +107,7 @@ func (this *WAVE_hdr) Read(infile *os.File) (subchunk_size uint32, err error) {
 	// Skip extra format bytes
 	if this.subchunk_size > default_subchunk_size {
 		extra_len := this.subchunk_size - default_subchunk_size
-		if _, err = infile.Seek(int64(extra_len), os.SEEK_SET); err != nil {
+		if _, err = fd.Seek(int64(extra_len), os.SEEK_SET); err != nil {
 			return
 		}
 	}
@@ -107,13 +115,16 @@ func (this *WAVE_hdr) Read(infile *os.File) (subchunk_size uint32, err error) {
 	// Skip unsupported chunks
 	subchunk_hdr := WAVE_subchunk_hdr{}
 	for {
-		if _, err = infile.Read(subchunk_hdr.toSlice()); err != nil {
+		if read_len, err = fd.Read(subchunk_hdr.toSlice()); err != nil {
+			return
+		} else if read_len != int(unsafe.Sizeof(subchunk_hdr)) {
+			err = PARTIAL_READ_ERROR
 			return
 		}
 		if subchunk_hdr.subchunk_id == data_SIGN {
 			break
 		}
-		if _, err = infile.Seek(int64(subchunk_hdr.subchunk_size), os.SEEK_SET); err != nil {
+		if _, err = fd.Seek(int64(subchunk_hdr.subchunk_size), os.SEEK_SET); err != nil {
 			return
 		}
 	}
