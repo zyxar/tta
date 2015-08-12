@@ -65,7 +65,7 @@ func (this *Decoder) ProcessStream(out []byte, cb Callback) int32 {
 		}
 		if this.fpos == this.flen {
 			// check frame crc
-			crc_flag := this.fifo.read_crc32()
+			crc_flag := !this.fifo.read_crc32()
 			if crc_flag {
 				for i := 0; i < len(out); i++ {
 					out[i] = 0
@@ -133,7 +133,7 @@ func (this *Decoder) ProcessFrame(in_size uint32, out []byte) int32 {
 
 		if this.fpos == this.flen || this.fifo.count == in_size-4 {
 			// check frame crc
-			if this.fifo.read_crc32() {
+			if !this.fifo.read_crc32() {
 				for i := 0; i < len(out); i++ {
 					out[i] = 0
 				}
@@ -156,7 +156,7 @@ func (this *Decoder) read_seek_table() bool {
 		this.seek_table[i] = tmp
 		tmp += uint64(this.fifo.read_uint32())
 	}
-	return !this.fifo.read_crc32()
+	return this.fifo.read_crc32()
 }
 
 func (this *Decoder) set_password(pass string) {

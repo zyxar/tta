@@ -31,7 +31,7 @@ func (s *tta_fifo) read_uint32() (v uint32) {
 
 func (s *tta_fifo) read_crc32() bool {
 	crc := s.crc ^ 0xFFFFFFFF
-	return crc != s.read_uint32()
+	return crc == s.read_uint32()
 }
 
 func (s *tta_fifo) read_start() {
