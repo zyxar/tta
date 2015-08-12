@@ -5,7 +5,12 @@ import (
 	"testing"
 )
 
+func TestUtil(t *testing.T) {
+	println("==== util test ====")
+}
+
 func TestComputeKeyDigits(t *testing.T) {
+	println("[:TestComputeKeyDigits:]")
 	var strs = [...]string{"whatisthis?", "1", "", "12", "089q3eoib*(*U(*#$", "~*)(*)@&("}
 	var digits = [...][8]byte{
 		[8]byte{37, 121, 62, 136, 117, 151, 236, 181},
@@ -24,6 +29,7 @@ func TestComputeKeyDigits(t *testing.T) {
 }
 
 func TestConvertPassword(t *testing.T) {
+	println("[:TestConvertPassword:]")
 	var strs = [...]string{
 		"",
 		"1",
