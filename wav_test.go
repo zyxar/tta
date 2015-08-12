@@ -21,13 +21,13 @@ func TestReadHeader(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wav := WAVE_hdr{}
+	wav := WaveHeader{}
 
 	if size, err := wav.Read(file); err != nil {
 		t.Error(err)
 	} else {
-		if bytes.Compare(wav_slice, wav.toSlice()) != 0 || size != wav_size {
-			t.Error("WAVE_hdr::Read fail")
+		if bytes.Compare(wav_slice, wav.Bytes()) != 0 || size != wav_size {
+			t.Error("WaveHeader::Read fail")
 		}
 	}
 }
@@ -39,8 +39,8 @@ func TestWriteHeader(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wav := WAVE_hdr{}
-	copy(wav.toSlice(), wav_slice)
+	wav := WaveHeader{}
+	copy(wav.Bytes(), wav_slice)
 	if err = wav.Write(file, wav_size); err != nil {
 		t.Error(err)
 	}
