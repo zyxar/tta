@@ -6,6 +6,51 @@ import (
 	"os"
 )
 
+func Decompress(infile, outfile *os.File, passwd string, cb Callback) (err error) {
+	decoder := NewDecoder(infile)
+	if len(passwd) > 0 {
+		decoder.SetPassword(passwd)
+	}
+	info := tta_info{}
+	if err = decoder.GetInfo(&info, 0); err != nil {
+		return
+	}
+	smp_size := info.nch * ((info.bps + 7) / 8)
+	data_size := info.samples * smp_size
+	wave_hdr := WaveHeader{
+		chunk_id:        RIFF_SIGN,
+		chunk_size:      data_size + 36,
+		format:          WAVE_SIGN,
+		subchunk_id:     fmt_SIGN,
+		subchunk_size:   16,
+		audio_format:    1,
+		num_channels:    uint16(info.nch),
+		sample_rate:     info.sps,
+		bits_per_sample: uint16(info.bps),
+		byte_rate:       info.sps * smp_size,
+		block_align:     uint16(smp_size),
+	}
+	if err = wave_hdr.Write(outfile, data_size); err != nil {
+		return
+	}
+	buf_size := PCM_BUFFER_LENGTH * smp_size
+	buffer := make([]byte, buf_size)
+	var write_len int
+	for {
+		if write_len = int(uint32(decoder.ProcessStream(buffer, cb)) * smp_size); write_len == 0 {
+			break
+		}
+		buf := buffer[:write_len]
+		if write_len, err = outfile.Write(buf); err != nil {
+			return
+		} else if write_len != len(buf) {
+			err = PARTIAL_WRITTEN_ERROR
+			return
+		}
+	}
+	return
+}
+
 func NewDecoder(iocb io.ReadWriteSeeker) *Decoder {
 	dec := Decoder{}
 	dec.fifo.io = iocb
@@ -159,7 +204,7 @@ func (this *Decoder) read_seek_table() bool {
 	return this.fifo.read_crc32()
 }
 
-func (this *Decoder) set_password(pass string) {
+func (this *Decoder) SetPassword(pass string) {
 	this.data = compute_key_digits([]byte(pass))
 	this.password_set = true
 }
@@ -211,7 +256,7 @@ func (this *Decoder) set_position(seconds uint32) (new_pos uint32, err error) {
 	return
 }
 
-func (this *Decoder) init_set_info(info *tta_info) error {
+func (this *Decoder) SetInfo(info *tta_info) error {
 	if info.format > 2 ||
 		info.bps < MIN_BPS ||
 		info.bps > MAX_BPS ||
@@ -235,7 +280,7 @@ func (this *Decoder) init_set_info(info *tta_info) error {
 	return nil
 }
 
-func (this *Decoder) init_get_info(info *tta_info, pos uint64) (err error) {
+func (this *Decoder) GetInfo(info *tta_info, pos uint64) (err error) {
 	if pos != 0 {
 		if _, err = this.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
 			err = TTA_SEEK_ERROR
