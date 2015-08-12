@@ -79,7 +79,7 @@ func (this *Decoder) ProcessStream(out []byte, cb Callback) int32 {
 		// decompress stage 1: adaptive hybrid filter
 		this.decoder[i].fst.hybrid_filter_dec(&value)
 		// decompress stage 2: fixed order 1 prediction
-		value += ((this.decoder[i].prev * ((1 << 5) - 1)) >> 5) // ((x * ((1 << k) - 1)) >> k)
+		value += ((this.decoder[i].prev * ((1 << 5) - 1)) >> 5)
 		this.decoder[i].prev = value
 		cache[i] = value
 		if i < this.decoder_len-1 {
@@ -89,15 +89,13 @@ func (this *Decoder) ProcessStream(out []byte, cb Callback) int32 {
 				write_buffer(value, out_, this.depth)
 				out_ = out_[this.depth:]
 			} else {
-				j := i
 				k := i - 1
 				cache[i] += cache[k] / 2
 				for k > 0 {
-					cache[k] = cache[j] - cache[k]
-					j--
+					cache[k] = cache[k+1] - cache[k]
 					k--
 				}
-				cache[k] = cache[j] - cache[k]
+				cache[k] = cache[k+1] - cache[k]
 				for k <= i {
 					write_buffer(cache[k], out_, this.depth)
 					out_ = out_[this.depth:]

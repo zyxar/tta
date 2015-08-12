@@ -15,9 +15,9 @@ func (fs *tta_fltst) init(data [8]byte, shift int32) {
 }
 
 func (fs *tta_fltst) hybrid_filter_dec(in *int32) {
-	pa := fs.dl
-	pb := fs.qm
-	pm := fs.dx
+	pa := fs.dl[:]
+	pb := fs.qm[:]
+	pm := fs.dx[:]
 	sum := fs.round
 	if fs.error < 0 {
 		pb[0] -= pm[0]
@@ -65,9 +65,9 @@ func (fs *tta_fltst) hybrid_filter_dec(in *int32) {
 }
 
 func (fs *tta_fltst) hybrid_filter_enc(in *int32) {
-	pa := fs.dl
-	pb := fs.qm
-	pm := fs.dx
+	pa := fs.dl[:]
+	pb := fs.qm[:]
+	pm := fs.dx[:]
 	sum := fs.round
 	if fs.error < 0 {
 		pb[0] -= pm[0]
