@@ -21,8 +21,8 @@ func TestReadHeader(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer file.Close()
 	wav := WaveHeader{}
-
 	if size, err := wav.Read(file); err != nil {
 		t.Error(err)
 	} else {
@@ -39,6 +39,7 @@ func TestWriteHeader(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer file.Close()
 	wav := WaveHeader{}
 	copy(wav.Bytes(), wav_slice)
 	if err = wav.Write(file, wav_size); err != nil {
