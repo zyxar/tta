@@ -1,10 +1,15 @@
 package tta
 
 import (
-	"encoding/binary"
 	"io"
 	"os"
 )
+
+var SSE_Enabled bool
+
+func init() {
+	SSE_Enabled = false
+}
 
 func Decompress(infile, outfile *os.File, passwd string, cb Callback) (err error) {
 	decoder := NewDecoder(infile)
@@ -57,17 +62,6 @@ func NewDecoder(iocb io.ReadWriteSeeker) *Decoder {
 	return &dec
 }
 
-func write_buffer(src int32, p []byte, depth uint32) {
-	switch depth {
-	case 2:
-		binary.LittleEndian.PutUint16(p, uint16(0xFFFF&src))
-	case 1:
-		p[0] = byte(0xFF & src)
-	default:
-		binary.LittleEndian.PutUint32(p, uint32(0xFFFF&src))
-	}
-}
-
 func (this *Decoder) ProcessStream(out []byte, cb Callback) int32 {
 	var cache [MAX_NCH]int32
 	var value int32
@@ -77,7 +71,7 @@ func (this *Decoder) ProcessStream(out []byte, cb Callback) int32 {
 	for this.fpos < this.flen && len(out_) > 0 {
 		value = this.fifo.get_value(&this.decoder[i].rice)
 		// decompress stage 1: adaptive hybrid filter
-		this.decoder[i].fst.hybrid_filter_dec(&value)
+		this.decoder[i].filter.Decode(&value)
 		// decompress stage 2: fixed order 1 prediction
 		value += ((this.decoder[i].prev * ((1 << 5) - 1)) >> 5)
 		this.decoder[i].prev = value
@@ -142,7 +136,7 @@ func (this *Decoder) ProcessFrame(in_size uint32, out []byte) int32 {
 	for this.fifo.count < in_size && len(out_) > 0 {
 		value = this.fifo.get_value(&this.decoder[i].rice)
 		// decompress stage 1: adaptive hybrid filter
-		this.decoder[i].fst.hybrid_filter_dec(&value)
+		this.decoder[i].filter.Decode(&value)
 		// decompress stage 2: fixed order 1 prediction
 		value += ((this.decoder[i].prev * ((1 << 5) - 1)) >> 5)
 		this.decoder[i].prev = value
@@ -228,7 +222,11 @@ func (this *Decoder) frame_init(frame uint32, seek_needed bool) (err error) {
 		this.flen = this.flen_std
 	}
 	for i := 0; i < this.decoder_len; i++ {
-		this.decoder[i].fst.init(this.data, shift)
+		if SSE_Enabled {
+			this.decoder[i].filter = NewSSEFilter(this.data, shift)
+		} else {
+			this.decoder[i].filter = NewCompatibleFilter(this.data, shift)
+		}
 		this.decoder[i].rice.init(10, 10)
 		this.decoder[i].prev = 0
 	}

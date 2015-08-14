@@ -12,7 +12,12 @@ type tta_info struct {
 	samples uint32 // data length in samples
 }
 
-type tta_fltst struct {
+type tta_filter interface {
+	Decode(*int32)
+	Encode(*int32)
+}
+
+type tta_filter_compat struct {
 	index int32
 	error int32
 	round int32
@@ -21,6 +26,8 @@ type tta_fltst struct {
 	dx    [24]int32
 	dl    [24]int32
 }
+
+type tta_filter_sse tta_filter_compat
 
 type tta_adapt struct {
 	k0   uint32
@@ -37,9 +44,9 @@ func (rice *tta_adapt) init(k0, k1 uint32) {
 }
 
 type tta_codec struct {
-	fst  tta_fltst
-	rice tta_adapt
-	prev int32
+	filter tta_filter
+	rice   tta_adapt
+	prev   int32
 }
 
 type tta_fifo struct {

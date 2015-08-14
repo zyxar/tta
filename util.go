@@ -1,5 +1,9 @@
 package tta
 
+import (
+	"encoding/binary"
+)
+
 func compute_key_digits(p []byte) [8]byte {
 	var crc_lo, crc_hi uint32 = 0xFFFFFFFF, 0xFFFFFFFF
 	for i := 0; i < len(p); i++ {
@@ -37,4 +41,15 @@ func convert_password(src string) []byte {
 		}
 	}
 	return dst
+}
+
+func write_buffer(src int32, p []byte, depth uint32) {
+	switch depth {
+	case 2:
+		binary.LittleEndian.PutUint16(p, uint16(0xFFFF&src))
+	case 1:
+		p[0] = byte(0xFF & src)
+	default:
+		binary.LittleEndian.PutUint32(p, uint32(0xFFFF&src))
+	}
 }
