@@ -26,3 +26,4 @@ _testmain.go
 libtta-c*
 *.wav
 *.tta
+cmd/gotta/gotta
