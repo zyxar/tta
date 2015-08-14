@@ -7,10 +7,6 @@ import (
 
 var SSE_Enabled bool
 
-func init() {
-	SSE_Enabled = false
-}
-
 func Decompress(infile, outfile *os.File, passwd string, cb Callback) (err error) {
 	decoder := NewDecoder(infile)
 	if len(passwd) > 0 {
