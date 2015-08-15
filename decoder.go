@@ -65,17 +65,17 @@ func (this *Decoder) ProcessStream(out []byte, cb Callback) int32 {
 	i := 0
 	out_ := out[:]
 	for this.fpos < this.flen && len(out_) > 0 {
-		value = this.fifo.get_value(&this.decoder[i].rice)
+		value = this.fifo.get_value(&this.codec[i].rice)
 		// decompress stage 1: adaptive hybrid filter
-		this.decoder[i].filter.Decode(&value)
+		this.codec[i].filter.Decode(&value)
 		// decompress stage 2: fixed order 1 prediction
-		value += ((this.decoder[i].prev * ((1 << 5) - 1)) >> 5)
-		this.decoder[i].prev = value
+		value += ((this.codec[i].prev * ((1 << 5) - 1)) >> 5)
+		this.codec[i].prev = value
 		cache[i] = value
-		if i < this.decoder_len-1 {
+		if i < this.channels-1 {
 			i++
 		} else {
-			if this.decoder_len == 1 {
+			if this.channels == 1 {
 				write_buffer(value, out_, this.depth)
 				out_ = out_[this.depth:]
 			} else {
@@ -130,17 +130,17 @@ func (this *Decoder) ProcessFrame(in_size uint32, out []byte) int32 {
 	var ret int32 = 0
 	out_ := out[:]
 	for this.fifo.count < in_size && len(out_) > 0 {
-		value = this.fifo.get_value(&this.decoder[i].rice)
+		value = this.fifo.get_value(&this.codec[i].rice)
 		// decompress stage 1: adaptive hybrid filter
-		this.decoder[i].filter.Decode(&value)
+		this.codec[i].filter.Decode(&value)
 		// decompress stage 2: fixed order 1 prediction
-		value += ((this.decoder[i].prev * ((1 << 5) - 1)) >> 5)
-		this.decoder[i].prev = value
+		value += ((this.codec[i].prev * ((1 << 5) - 1)) >> 5)
+		this.codec[i].prev = value
 		cache[i] = value
-		if i < this.decoder_len-1 {
+		if i < this.channels-1 {
 			i++
 		} else {
-			if this.decoder_len == 1 {
+			if this.channels == 1 {
 				write_buffer(value, out_, this.depth)
 				out_ = out_[this.depth:]
 			} else {
@@ -217,14 +217,14 @@ func (this *Decoder) frame_init(frame uint32, seek_needed bool) (err error) {
 	} else {
 		this.flen = this.flen_std
 	}
-	for i := 0; i < this.decoder_len; i++ {
+	for i := 0; i < this.channels; i++ {
 		if SSE_Enabled {
-			this.decoder[i].filter = NewSSEFilter(this.data, shift)
+			this.codec[i].filter = NewSSEFilter(this.data, shift)
 		} else {
-			this.decoder[i].filter = NewCompatibleFilter(this.data, shift)
+			this.codec[i].filter = NewCompatibleFilter(this.data, shift)
 		}
-		this.decoder[i].rice.init(10, 10)
-		this.decoder[i].prev = 0
+		this.codec[i].rice.init(10, 10)
+		this.codec[i].prev = 0
 	}
 	this.fpos = 0
 	this.fifo.reset()
@@ -266,7 +266,7 @@ func (this *Decoder) SetInfo(info *tta_info) error {
 		this.flen_last = this.flen_std
 	}
 	this.rate = 0
-	this.decoder_len = int(info.nch)
+	this.channels = int(info.nch)
 	this.fifo.read_start()
 	this.frame_init(0, false)
 	return nil
@@ -314,7 +314,7 @@ func (this *Decoder) GetInfo(info *tta_info, pos uint64) (err error) {
 	this.rate = 0
 	this.seek_table = make([]uint64, this.frames)
 	this.seek_allowed = this.read_seek_table()
-	this.decoder_len = int(info.nch)
+	this.channels = int(info.nch)
 	this.frame_init(0, false)
 	return
 }
