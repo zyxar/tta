@@ -10,6 +10,7 @@ func TestDecoder(t *testing.T) {
 }
 
 func TestDecompress(t *testing.T) {
+	println("[:TestDecompress:]")
 	infile, err := os.Open("./data/sample.tta")
 	if err != nil {
 		t.Fatal(err)

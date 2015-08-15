@@ -5,14 +5,14 @@ func NewCompatibleFilter(data [8]byte, shift int32) *tta_filter_compat {
 	this := tta_filter_compat{}
 	this.shift = shift
 	this.round = 1 << uint32(shift-1)
-	this.qm[0] = int32(data[0])
-	this.qm[1] = int32(data[1])
-	this.qm[2] = int32(data[2])
-	this.qm[3] = int32(data[3])
-	this.qm[4] = int32(data[4])
-	this.qm[5] = int32(data[5])
-	this.qm[6] = int32(data[6])
-	this.qm[7] = int32(data[7])
+	this.qm[0] = int32(int8(data[0]))
+	this.qm[1] = int32(int8(data[1]))
+	this.qm[2] = int32(int8(data[2]))
+	this.qm[3] = int32(int8(data[3]))
+	this.qm[4] = int32(int8(data[4]))
+	this.qm[5] = int32(int8(data[5]))
+	this.qm[6] = int32(int8(data[6]))
+	this.qm[7] = int32(int8(data[7]))
 	return &this
 }
 
@@ -123,14 +123,14 @@ func NewSSEFilter(data [8]byte, shift int32) *tta_filter_sse {
 	this := tta_filter_sse{}
 	this.shift = shift
 	this.round = 1 << uint32(shift-1)
-	this.qm[0] = int32(data[0])
-	this.qm[1] = int32(data[1])
-	this.qm[2] = int32(data[2])
-	this.qm[3] = int32(data[3])
-	this.qm[4] = int32(data[4])
-	this.qm[5] = int32(data[5])
-	this.qm[6] = int32(data[6])
-	this.qm[7] = int32(data[7])
+	this.qm[0] = int32(int8(data[0]))
+	this.qm[1] = int32(int8(data[1]))
+	this.qm[2] = int32(int8(data[2]))
+	this.qm[3] = int32(int8(data[3]))
+	this.qm[4] = int32(int8(data[4]))
+	this.qm[5] = int32(int8(data[5]))
+	this.qm[6] = int32(int8(data[6]))
+	this.qm[7] = int32(int8(data[7]))
 	return &this
 }
 

@@ -35,6 +35,7 @@ func main() {
 			panic(err)
 		}
 		defer outfile.Close()
+		println("Decoding:", flag.Arg(0), "to", flag.Arg(1))
 		beginTime := time.Now()
 		if err = tta.Decompress(infile, outfile, passwd, func(rate, fnum, frames uint32) {
 			pcnt := uint32(float32(fnum) * 100. / float32(frames))

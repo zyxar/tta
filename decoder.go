@@ -193,7 +193,7 @@ func (this *Decoder) read_seek_table() bool {
 }
 
 func (this *Decoder) SetPassword(pass string) {
-	this.data = compute_key_digits([]byte(pass))
+	this.data = compute_key_digits(convert_password(pass))
 	this.password_set = true
 }
 
@@ -295,6 +295,10 @@ func (this *Decoder) GetInfo(info *tta_info, pos uint64) (err error) {
 		if !this.password_set {
 			return TTA_PASSWORD_ERROR
 		}
+	} else {
+		// disregard password if file is not encrypted
+		this.password_set = false
+		this.data = [8]byte{}
 	}
 	this.offset = pos
 	this.format = info.format
