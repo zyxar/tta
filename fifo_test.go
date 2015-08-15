@@ -4,12 +4,7 @@ import (
 	"testing"
 )
 
-func TestFifo(t *testing.T) {
-	println("==== fifo test ====")
-}
-
 func TestReadByte(t *testing.T) {
-	println("[:TestReadByte:]")
 	fifo := tta_fifo{}
 	for i := 0; i < TTA_FIFO_BUFFER_SIZE; i++ {
 		fifo.buffer[i] = byte(i)
@@ -36,7 +31,6 @@ func TestReadByte(t *testing.T) {
 }
 
 func TestReadUint16(t *testing.T) {
-	println("[:TestReadUint16:]")
 	fifo := tta_fifo{}
 	for i := 0; i < TTA_FIFO_BUFFER_SIZE; i++ {
 		fifo.buffer[i] = byte(i)
@@ -65,7 +59,6 @@ func TestReadUint16(t *testing.T) {
 }
 
 func TestReadUint32(t *testing.T) {
-	println("[:TestReadUint32:]")
 	fifo := tta_fifo{}
 	for i := 0; i < TTA_FIFO_BUFFER_SIZE; i++ {
 		fifo.buffer[i] = byte(i)

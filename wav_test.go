@@ -11,12 +11,7 @@ var wav_slice = []byte{0x52, 0x49, 0x46, 0x46, 0x98, 0x03, 0x00, 0x00, 0x57, 0x4
 	0x04, 0x00, 0x10, 0x00}
 var wav_size = uint32(0x0374)
 
-func TestWav(t *testing.T) {
-	println("==== wav test ====")
-}
-
 func TestReadHeader(t *testing.T) {
-	println("[:TestReadHeader:]")
 	file, err := os.Open("./data/sample.wav")
 	if err != nil {
 		t.Fatal(err)
@@ -34,7 +29,6 @@ func TestReadHeader(t *testing.T) {
 
 func TestWriteHeader(t *testing.T) {
 	filename := os.TempDir() + "/tta_tmp.wav"
-	println("[:TestWriteHeader:] -", filename)
 	file, err := os.Create(filename)
 	if err != nil {
 		t.Fatal(err)
