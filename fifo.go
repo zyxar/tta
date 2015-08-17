@@ -171,7 +171,7 @@ func (s *tta_fifo) write_done() error {
 }
 
 func (s *tta_fifo) write_byte(v byte) error {
-	if s.pos == s.end {
+	if s.pos == int32(len(s.buffer)) {
 		if n, err := s.io.Write(s.buffer[:]); err != nil || int32(n) != TTA_FIFO_BUFFER_SIZE {
 			return TTA_WRITE_ERROR
 		}
