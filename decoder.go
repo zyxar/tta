@@ -272,9 +272,9 @@ func (this *Decoder) SetInfo(info *tta_info) error {
 	return nil
 }
 
-func (this *Decoder) GetInfo(info *tta_info, pos uint64) (err error) {
+func (this *Decoder) GetInfo(info *tta_info, pos int64) (err error) {
 	if pos != 0 {
-		if _, err = this.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
+		if _, err = this.fifo.io.Seek(pos, os.SEEK_SET); err != nil {
 			err = TTA_SEEK_ERROR
 			return
 		}
@@ -284,7 +284,6 @@ func (this *Decoder) GetInfo(info *tta_info, pos uint64) (err error) {
 	if p, err = this.fifo.read_tta_header(info); err != nil {
 		return
 	}
-	pos += uint64(p)
 	if info.format > 2 ||
 		info.bps < MIN_BPS ||
 		info.bps > MAX_BPS ||
@@ -300,7 +299,7 @@ func (this *Decoder) GetInfo(info *tta_info, pos uint64) (err error) {
 		this.password_set = false
 		this.data = [8]byte{}
 	}
-	this.offset = pos
+	this.offset = uint64(pos) + uint64(p)
 	this.format = info.format
 	this.depth = (info.bps + 7) / 8
 	this.flen_std = (256 * (info.sps) / 245)
