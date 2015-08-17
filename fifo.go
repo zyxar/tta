@@ -216,6 +216,7 @@ func (s *tta_fifo) write_skip_bytes(size uint32) error {
 		if err := s.write_byte(0); err != nil {
 			return err
 		}
+		size--
 	}
 	return nil
 }

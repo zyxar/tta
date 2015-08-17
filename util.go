@@ -53,3 +53,15 @@ func write_buffer(src int32, p []byte, depth uint32) {
 		binary.LittleEndian.PutUint32(p, uint32(0xFFFF&src))
 	}
 }
+
+func read_buffer(p []byte, depth uint32) (v int32) {
+	switch depth {
+	case 2:
+		v = int32(binary.LittleEndian.Uint16(p))
+	case 1:
+		v = int32(p[0])
+	default:
+		v = int32(binary.LittleEndian.Uint32(p))
+	}
+	return
+}
