@@ -114,7 +114,7 @@ func (this *Encoder) ProcessStream(in []byte, cb Callback) {
 		// compress stage 2: adaptive hybrid filter
 		this.codec[i].filter.Encode(&curr)
 		this.fifo.put_value(&this.codec[i].rice, curr)
-		if i < this.channels {
+		if i < this.channels-1 {
 			i++
 		} else {
 			i = 0
@@ -164,7 +164,7 @@ func (this *Encoder) ProcessFrame(in []byte) {
 		// compress stage 2: adaptive hybrid filter
 		this.codec[i].filter.Encode(&curr)
 		this.fifo.put_value(&this.codec[i].rice, curr)
-		if i < this.channels {
+		if i < this.channels-1 {
 			i++
 		} else {
 			i = 0
