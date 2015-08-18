@@ -161,18 +161,18 @@ func (s *tta_fifo) write_start() {
 }
 
 func (s *tta_fifo) write_done() error {
-	buffer_size := s.pos
-	if buffer_size > 0 {
-		if n, err := s.io.Write(s.buffer[:]); err != nil || int32(n) != buffer_size {
+	if s.pos > 0 {
+		if n, err := s.io.Write(s.buffer[:s.pos]); err != nil || n != int(s.pos) {
 			return TTA_WRITE_ERROR
 		}
+		s.pos = 0
 	}
 	return nil
 }
 
 func (s *tta_fifo) write_byte(v byte) error {
-	if s.pos == int32(len(s.buffer)) {
-		if n, err := s.io.Write(s.buffer[:]); err != nil || int32(n) != TTA_FIFO_BUFFER_SIZE {
+	if s.pos == TTA_FIFO_BUFFER_SIZE {
+		if n, err := s.io.Write(s.buffer[:]); err != nil || n != TTA_FIFO_BUFFER_SIZE {
 			return TTA_WRITE_ERROR
 		}
 		s.pos = 0

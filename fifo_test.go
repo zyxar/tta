@@ -85,3 +85,26 @@ func TestReadUint32(t *testing.T) {
 		t.Error("read_uint32 fail @ pos")
 	}
 }
+
+func TestWriteByte(t *testing.T) {
+	fifo := tta_fifo{}
+	fifo.pos = 0
+	fifo.end = TTA_FIFO_BUFFER_SIZE
+	for i := 0; i < TTA_FIFO_BUFFER_SIZE; i++ {
+		if err := fifo.write_byte(byte(i)); err != nil {
+			t.Errorf("write_byte fail @ %d, %v\n", i, err)
+		}
+		if fifo.count != uint32(i+1) {
+			t.Errorf("write_byte fail @ count - %d\n", i)
+		}
+		if fifo.pos != int32(i+1) {
+			t.Errorf("write_byte fail @ pos - %d\n", i)
+		}
+	}
+	if fifo.count != TTA_FIFO_BUFFER_SIZE {
+		t.Error("write_byte fail @ count")
+	}
+	if fifo.pos != TTA_FIFO_BUFFER_SIZE {
+		t.Error("write_byte fail @ pos")
+	}
+}

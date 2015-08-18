@@ -67,12 +67,12 @@ func Compress(infile, outfile *os.File, passwd string, cb Callback) (err error) 
 		if buf_size >= data_size {
 			buf_size = data_size
 		}
-		if read_len, err = infile.Read(buffer[:buf_size]); err != nil || read_len == 0 {
+		if read_len, err = infile.Read(buffer[:buf_size]); err != nil || read_len != int(buf_size) {
 			err = TTA_READ_ERROR
 			return
 		}
-		encoder.ProcessStream(buffer[:read_len], cb)
-		data_size -= uint32(read_len)
+		encoder.ProcessStream(buffer[:buf_size], cb)
+		data_size -= buf_size
 	}
 	encoder.Close()
 	return
@@ -93,14 +93,20 @@ func (this *Encoder) ProcessStream(in []byte, cb Callback) {
 	in = in[this.depth:]
 	tmp = next << this.shift_bits
 	i := 0
-	for len(in) > 0 {
+	index := 0
+	for {
 		curr = next
-		next = read_buffer(in, this.depth)
-		in = in[this.depth:]
-		tmp = next << this.shift_bits
+		if index < len(in) {
+			next = read_buffer(in[index:], this.depth)
+			tmp = next << this.shift_bits
+		} else {
+			next = 0
+			tmp = 0
+		}
+		index += int(this.depth)
 		// transform data
 		if this.channels > 1 {
-			if i < this.channels {
+			if i < this.channels-1 {
 				res = next - curr
 				curr = res
 			} else {
@@ -131,6 +137,9 @@ func (this *Encoder) ProcessStream(in []byte, cb Callback) {
 			}
 			this.frame_init(this.fnum)
 		}
+		if index >= int(this.depth)+len(in) {
+			break
+		}
 	}
 }
 
@@ -143,14 +152,20 @@ func (this *Encoder) ProcessFrame(in []byte) {
 	in = in[this.depth:]
 	tmp = next << this.shift_bits
 	i := 0
-	for len(in) > 0 {
+	index := 0
+	for {
 		curr = next
-		next = read_buffer(in, this.depth)
-		in = in[this.depth:]
-		tmp = next << this.shift_bits
+		if index < len(in) {
+			next = read_buffer(in[index:], this.depth)
+			tmp = next << this.shift_bits
+		} else {
+			next = 0
+			tmp = 0
+		}
+		index += int(this.depth)
 		// transform data
 		if this.channels > 1 {
-			if i < this.channels {
+			if i < this.channels-1 {
 				res = next - curr
 				curr = res
 			} else {
@@ -174,6 +189,9 @@ func (this *Encoder) ProcessFrame(in []byte) {
 			this.fifo.flush_bit_cache()
 			// update dynamic info
 			this.rate = (this.fifo.count << 3) / 1070
+			break
+		}
+		if index >= int(this.depth)+len(in) {
 			break
 		}
 	}
