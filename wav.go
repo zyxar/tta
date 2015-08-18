@@ -1,25 +1,20 @@
 package tta
 
 import (
-	"errors"
 	"os"
 	"reflect"
 	"unsafe"
 )
 
 const (
-	RIFF_SIGN = 0x46464952
-	WAVE_SIGN = 0x45564157
-	fmt_SIGN  = 0x20746D66
-	data_SIGN = 0x61746164
+	_RIFF_SIGN = 0x46464952
+	_WAVE_SIGN = 0x45564157
+	_FMT_SIGN  = 0x20746D66
+	_DATA_SIGN = 0x61746164
 
-	WAVE_FORMAT_PCM        = 1
-	WAVE_FORMAT_EXTENSIBLE = 0xFFFE
-	PCM_BUFFER_LENGTH      = 5120
+	_WAVE_FORMAT_PCM        = 1
+	_WAVE_FORMAT_EXTENSIBLE = 0xFFFE
 )
-
-var PARTIAL_WRITTEN_ERROR = errors.New("partial written")
-var PARTIAL_READ_ERROR = errors.New("partial read")
 
 type WaveHeader struct {
 	chunk_id        uint32
@@ -90,7 +85,7 @@ func (this *WaveHeader) Read(fd *os.File) (subchunk_size uint32, err error) {
 		err = PARTIAL_READ_ERROR
 		return
 	}
-	if this.audio_format == WAVE_FORMAT_EXTENSIBLE {
+	if this.audio_format == _WAVE_FORMAT_EXTENSIBLE {
 		wave_hdr_ex := WaveExtHeader{}
 		if read_len, err = fd.Read(wave_hdr_ex.Bytes()); err != nil {
 			return
@@ -119,7 +114,7 @@ func (this *WaveHeader) Read(fd *os.File) (subchunk_size uint32, err error) {
 			err = PARTIAL_READ_ERROR
 			return
 		}
-		if subchunk_hdr.subchunk_id == data_SIGN {
+		if subchunk_hdr.subchunk_id == _DATA_SIGN {
 			break
 		}
 		if _, err = fd.Seek(int64(subchunk_hdr.subchunk_size), os.SEEK_SET); err != nil {
@@ -140,7 +135,7 @@ func (this *WaveHeader) Write(fd *os.File, size uint32) (err error) {
 		return
 	}
 	// Write Subchunk header
-	subchunk_hdr := WaveSubchunkHeader{data_SIGN, size}
+	subchunk_hdr := WaveSubchunkHeader{_DATA_SIGN, size}
 	if write_len, err = fd.Write(subchunk_hdr.Bytes()); err != nil {
 		return
 	} else if write_len != int(unsafe.Sizeof(subchunk_hdr)) {

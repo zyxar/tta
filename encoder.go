@@ -35,8 +35,8 @@ func Compress(infile, outfile *os.File, passwd string, cb Callback) (err error) 
 		err = fmt.Errorf("incorrect data size info in wav file: %x", data_size)
 		return
 	}
-	if (wave_hdr.chunk_id != RIFF_SIGN) ||
-		(wave_hdr.format != WAVE_SIGN) ||
+	if (wave_hdr.chunk_id != _RIFF_SIGN) ||
+		(wave_hdr.format != _WAVE_SIGN) ||
 		(wave_hdr.num_channels == 0) ||
 		(wave_hdr.num_channels > MAX_NCH) ||
 		(wave_hdr.bits_per_sample == 0) ||

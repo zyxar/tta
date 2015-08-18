@@ -10,6 +10,7 @@ const (
 	MIN_BPS              = 16
 	MAX_NCH              = 6
 	TTA_FIFO_BUFFER_SIZE = 5120
+	PCM_BUFFER_LENGTH    = 5120
 
 	// TTA audio format
 	TTA_FORMAT_SIMPLE    = 1
@@ -17,7 +18,8 @@ const (
 	TTA_VERSION          = "2.3-go"
 )
 
-var ( // TTA_CODEC_STATUS
+var (
+	// TTA_CODEC_STATUS
 	TTA_NO_ERROR       error = nil // no known errors found
 	TTA_OPEN_ERROR           = errors.New("can't open file")
 	TTA_FORMAT_ERROR         = errors.New("not compatible file format")
@@ -25,9 +27,11 @@ var ( // TTA_CODEC_STATUS
 	TTA_READ_ERROR           = errors.New("can't read from input file")
 	TTA_WRITE_ERROR          = errors.New("can't write to output file")
 	TTA_SEEK_ERROR           = errors.New("file seek error")
-	TTA_MEMORY_ERROR         = errors.New("insufficient memory available")
 	TTA_PASSWORD_ERROR       = errors.New("password protected file")
 	TTA_NOT_SUPPORTED        = errors.New("unsupported architecture")
+
+	PARTIAL_WRITTEN_ERROR = errors.New("partial written")
+	PARTIAL_READ_ERROR    = errors.New("partial read")
 )
 
 const ( // CPU_ARCH_TYPE

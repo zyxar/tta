@@ -1,7 +1,7 @@
 // TODO: SSE4 optimization
 package tta
 
-func NewCompatibleFilter(data [8]byte, shift int32) *tta_filter_compat {
+func NewCompatibleFilter(data [8]byte, shift int32) tta_filter {
 	this := tta_filter_compat{}
 	this.shift = shift
 	this.round = 1 << uint32(shift-1)
@@ -119,7 +119,7 @@ func (this *tta_filter_compat) Encode(in *int32) {
 	this.error = *in
 }
 
-func NewSSEFilter(data [8]byte, shift int32) *tta_filter_sse {
+func NewSSEFilter(data [8]byte, shift int32) tta_filter {
 	this := tta_filter_sse{}
 	this.shift = shift
 	this.round = 1 << uint32(shift-1)

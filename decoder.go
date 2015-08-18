@@ -37,10 +37,10 @@ func Decompress(infile, outfile *os.File, passwd string, cb Callback) (err error
 	smp_size := info.nch * ((info.bps + 7) / 8)
 	data_size := info.samples * smp_size
 	wave_hdr := WaveHeader{
-		chunk_id:        RIFF_SIGN,
+		chunk_id:        _RIFF_SIGN,
 		chunk_size:      data_size + 36,
-		format:          WAVE_SIGN,
-		subchunk_id:     fmt_SIGN,
+		format:          _WAVE_SIGN,
+		subchunk_id:     _FMT_SIGN,
 		subchunk_size:   16,
 		audio_format:    1,
 		num_channels:    uint16(info.nch),
