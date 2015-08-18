@@ -1,11 +1,12 @@
 package main
 
 import (
-	"../../../tta"
 	"flag"
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/zyxar/tta"
 )
 
 var help, decode, encode bool
