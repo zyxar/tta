@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	"github.com/zyxar/tta"
@@ -16,45 +17,68 @@ func init() {
 	flag.BoolVar(&encode, "encode", false, "encode file")
 	flag.BoolVar(&decode, "decode", false, "decode file")
 	flag.BoolVar(&help, "help", false, "print this help")
-	flag.StringVar(&passwd, "passwd", "", "specify password")
+	flag.StringVar(&passwd, "passwd", "", "specify password (optional)")
 }
 
 func main() {
+	fmt.Fprintf(os.Stderr, "\r\nTTA1 lossless audio encoder/decoder, version %s.%d\n\n", tta.TTA_VERSION, tta.BinaryVersion())
 	flag.Parse()
-	if help || flag.NArg() < 2 || (!decode && !encode) {
-		flag.Usage()
+	if help || flag.NArg() < 1 || (!decode && !encode) {
+		fmt.Fprintf(os.Stderr, "\rUsage of %s: [encode|decode] [passwd PASSWORD] INPUT_FILE OUTPUT_FILE\n\n", os.Args[0])
+		flag.PrintDefaults()
 		return
 	}
-	infile, err := os.Open(flag.Arg(0))
+	infile := flag.Arg(0)
+	outfile := flag.Arg(1)
+	input, err := os.Open(infile)
 	if err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err)
+		return
 	}
-	defer infile.Close()
-	outfile, err := os.Create(flag.Arg(1))
+	defer input.Close()
+	if len(outfile) == 0 {
+		outfile = path.Base(infile)
+		outfile = outfile[:len(outfile)-len(path.Ext(outfile))]
+	}
+	if len(path.Ext(outfile)) == 0 {
+		if decode {
+			outfile += ".wav"
+		} else {
+			outfile += ".tta"
+		}
+	}
+	if _, err = os.Stat(outfile); err == nil || !os.IsNotExist(err) {
+		fmt.Fprintln(os.Stderr, outfile, "exists")
+		return
+	}
+	output, err := os.Create(outfile)
 	if err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err)
+		return
 	}
-	defer outfile.Close()
+	defer output.Close()
 	callback := func(rate, fnum, frames uint32) {
 		pcnt := uint32(float32(fnum) * 100. / float32(frames))
 		if (pcnt % 10) == 0 {
-			fmt.Printf("\rProgress: %02d%%", pcnt)
+			fmt.Fprintf(os.Stderr, "\rProgress: %02d%%", pcnt)
 		}
 	}
 	if decode {
-		println("Decoding:", flag.Arg(0), "to", flag.Arg(1))
+		fmt.Fprintf(os.Stderr, "Decoding: \"%v\" to \"%v\"\n", infile, outfile)
 		beginTime := time.Now()
-		if err = tta.Decompress(infile, outfile, passwd, callback); err != nil {
-			panic(err)
+		if err = tta.Decompress(input, output, passwd, callback); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
 		}
 		fmt.Printf("\rTime: %.3f sec.\n", float64(time.Now().UnixNano()-beginTime.UnixNano())/1000000000)
 		return
 	}
 	if encode {
-		println("Encoding:", flag.Arg(0), "to", flag.Arg(1))
+		fmt.Fprintf(os.Stderr, "Encoding: \"%v\" to \"%v\"\n", infile, outfile)
 		beginTime := time.Now()
-		if err = tta.Compress(infile, outfile, passwd, callback); err != nil {
-			panic(err)
+		if err = tta.Compress(input, output, passwd, callback); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
 		}
 		fmt.Printf("\rTime: %.3f sec.\n", float64(time.Now().UnixNano()-beginTime.UnixNano())/1000000000)
 	}

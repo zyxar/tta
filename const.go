@@ -14,6 +14,7 @@ const (
 	// TTA audio format
 	TTA_FORMAT_SIMPLE    = 1
 	TTA_FORMAT_ENCRYPTED = 2
+	TTA_VERSION          = "2.3-go"
 )
 
 var ( // TTA_CODEC_STATUS
