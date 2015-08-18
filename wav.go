@@ -40,18 +40,16 @@ type WaveSubchunkHeader struct {
 	subchunk_size uint32
 }
 
-type WaveSubformat struct {
-	f1 uint32
-	f2 uint16
-	f3 uint16
-	f4 [8]byte
-}
-
 type WaveExtHeader struct {
 	cb_size    uint16
 	valid_bits uint16
 	ch_mask    uint32
-	est        WaveSubformat
+	est        struct {
+		f1 uint32
+		f2 uint16
+		f3 uint16
+		f4 [8]byte
+	} // WaveSubformat
 }
 
 func (this *WaveHeader) Bytes() []byte {
