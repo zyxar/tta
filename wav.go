@@ -1,6 +1,7 @@
 package tta
 
 import (
+	"io"
 	"os"
 	"reflect"
 	"unsafe"
@@ -74,7 +75,7 @@ func (this *WaveExtHeader) Bytes() []byte {
 	}))
 }
 
-func (this *WaveHeader) Read(fd *os.File) (subchunk_size uint32, err error) {
+func (this *WaveHeader) Read(fd io.ReadWriteSeeker) (subchunk_size uint32, err error) {
 	var default_subchunk_size uint32 = 16
 	b := this.Bytes()
 	var read_len int
@@ -125,7 +126,7 @@ func (this *WaveHeader) Read(fd *os.File) (subchunk_size uint32, err error) {
 	return
 }
 
-func (this *WaveHeader) Write(fd *os.File, size uint32) (err error) {
+func (this *WaveHeader) Write(fd io.ReadWriteSeeker, size uint32) (err error) {
 	var write_len int
 	// Write WAVE header
 	if write_len, err = fd.Write(this.Bytes()); err != nil {

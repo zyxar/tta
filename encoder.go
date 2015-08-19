@@ -25,7 +25,7 @@ type Encoder struct {
 	shift_bits uint32   // packing int to pcm
 }
 
-func Compress(infile, outfile *os.File, passwd string, cb Callback) (err error) {
+func Compress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) (err error) {
 	wave_hdr := WaveHeader{}
 	var data_size uint32
 	if data_size, err = wave_hdr.Read(infile); err != nil {

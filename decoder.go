@@ -25,7 +25,7 @@ type Decoder struct {
 	fpos         uint32   // the current position in frame
 }
 
-func Decompress(infile, outfile *os.File, passwd string, cb Callback) (err error) {
+func Decompress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) (err error) {
 	decoder := NewDecoder(infile)
 	if len(passwd) > 0 {
 		decoder.SetPassword(passwd)
