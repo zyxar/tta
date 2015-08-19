@@ -16,6 +16,7 @@ func TestCompress(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer outfile.Close()
+	defer os.Remove(os.TempDir() + "/sample_compressed.tta")
 	if err = Compress(infile, outfile, "", nil); err != nil {
 		t.Error(err)
 	}

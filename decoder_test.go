@@ -16,6 +16,7 @@ func TestDecompress(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer outfile.Close()
+	defer os.Remove(os.TempDir() + "/sample_decompressed.wav")
 	if err = Decompress(infile, outfile, "", nil); err != nil {
 		t.Error(err)
 	}

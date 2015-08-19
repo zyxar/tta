@@ -9,7 +9,7 @@ import (
 )
 
 func TestComprehensive(t *testing.T) {
-	testfile := os.TempDir() + "/tta_comprehensive_test.wav"
+	testfile := "tta_comprehensive_test.wav"
 	if info, err := os.Stat(testfile); err == nil {
 		if !info.IsDir() {
 			fd, err := os.Open(testfile)
@@ -23,20 +23,24 @@ func TestComprehensive(t *testing.T) {
 			}
 			fd.Seek(0, os.SEEK_SET)
 			sum := sha256.Sum256(p)
-			outfile, err := os.Create(os.TempDir() + "/tta_comprehensive_test_compressed.tta")
+			tmpfile1 := os.TempDir() + "/tta_comprehensive_test_compressed.tta"
+			tmpfile2 := os.TempDir() + "/tta_comprehensive_test_decompressed.wav"
+			outfile, err := os.Create(tmpfile1)
 			if err != nil {
 				t.Fatal(err)
 			}
 			defer outfile.Close()
+			defer os.Remove(tmpfile1)
 			if err = Compress(fd, outfile, "", nil); err != nil {
 				t.Error(err)
 			}
 			outfile.Seek(0, os.SEEK_SET)
-			outfile2, err := os.Create(os.TempDir() + "/tta_comprehensive_test_decompressed.wav")
+			outfile2, err := os.Create(tmpfile2)
 			if err != nil {
 				t.Fatal(err)
 			}
 			defer outfile2.Close()
+			defer os.Remove(tmpfile2)
 			if err = Decompress(outfile, outfile2, "", nil); err != nil {
 				t.Error(err)
 			}
