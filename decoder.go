@@ -290,6 +290,27 @@ func (this *Decoder) SetInfo(info *tta_info) error {
 	return nil
 }
 
+func (this *Decoder) ReadHeader(info *tta_info) (uint32, error) {
+	size := this.fifo.skip_id3v2()
+	this.fifo.reset()
+	if 'T' != this.fifo.read_byte() ||
+		'T' != this.fifo.read_byte() ||
+		'A' != this.fifo.read_byte() ||
+		'1' != this.fifo.read_byte() {
+		return 0, TTA_FORMAT_ERROR
+	}
+	info.format = uint32(this.fifo.read_uint16())
+	info.nch = uint32(this.fifo.read_uint16())
+	info.bps = uint32(this.fifo.read_uint16())
+	info.sps = this.fifo.read_uint32()
+	info.samples = this.fifo.read_uint32()
+	if !this.fifo.read_crc32() {
+		return 0, TTA_FILE_ERROR
+	}
+	size += 22
+	return size, nil
+}
+
 func (this *Decoder) GetInfo(info *tta_info, pos int64) (err error) {
 	if pos != 0 {
 		if _, err = this.fifo.io.Seek(pos, os.SEEK_SET); err != nil {
@@ -299,7 +320,7 @@ func (this *Decoder) GetInfo(info *tta_info, pos int64) (err error) {
 	}
 	this.fifo.read_start()
 	var p uint32
-	if p, err = this.fifo.read_tta_header(info); err != nil {
+	if p, err = this.ReadHeader(info); err != nil {
 		return
 	}
 	if info.format > 2 ||

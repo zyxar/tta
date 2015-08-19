@@ -71,27 +71,6 @@ func (s *tta_fifo) skip_id3v2() (size uint32) {
 	return
 }
 
-func (s *tta_fifo) read_tta_header(info *tta_info) (uint32, error) {
-	size := s.skip_id3v2()
-	s.reset()
-	if 'T' != s.read_byte() ||
-		'T' != s.read_byte() ||
-		'A' != s.read_byte() ||
-		'1' != s.read_byte() {
-		return 0, TTA_FORMAT_ERROR
-	}
-	info.format = uint32(s.read_uint16())
-	info.nch = uint32(s.read_uint16())
-	info.bps = uint32(s.read_uint16())
-	info.sps = s.read_uint32()
-	info.samples = s.read_uint32()
-	if !s.read_crc32() {
-		return 0, TTA_FILE_ERROR
-	}
-	size += 22
-	return size, nil
-}
-
 func (s *tta_fifo) get_value(rice *tta_adapt) (value int32) {
 	if s.bcache^bit_mask[s.bcount] == 0 {
 		value += int32(s.bcount)
@@ -219,46 +198,6 @@ func (s *tta_fifo) write_skip_bytes(size uint32) error {
 		size--
 	}
 	return nil
-}
-
-func (s *tta_fifo) write_tta_header(info *tta_info) (size uint32, err error) {
-	s.reset()
-
-	// write TTA1 signature
-	if err = s.write_byte('T'); err != nil {
-		return
-	}
-	if err = s.write_byte('T'); err != nil {
-		return
-	}
-	if err = s.write_byte('A'); err != nil {
-		return
-	}
-	if err = s.write_byte('1'); err != nil {
-		return
-	}
-
-	if err = s.write_uint16(uint16(info.format)); err != nil {
-		return
-	}
-	if err = s.write_uint16(uint16(info.nch)); err != nil {
-		return
-	}
-	if err = s.write_uint16(uint16(info.bps)); err != nil {
-		return
-	}
-	if err = s.write_uint32(info.sps); err != nil {
-		return
-	}
-	if err = s.write_uint32(info.samples); err != nil {
-		return
-	}
-
-	if err = s.write_crc32(); err != nil {
-		return
-	}
-	size = 22
-	return
 }
 
 func (s *tta_fifo) put_value(rice *tta_adapt, value int32) {

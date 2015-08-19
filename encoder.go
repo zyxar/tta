@@ -250,6 +250,44 @@ func (this *Encoder) frame_reset(frame uint32, iocb io.ReadWriteSeeker) {
 	this.frame_init(frame)
 }
 
+func (this *Encoder) WriteHeader(info *tta_info) (size uint32, err error) {
+	this.fifo.reset()
+	// write TTA1 signature
+	if err = this.fifo.write_byte('T'); err != nil {
+		return
+	}
+	if err = this.fifo.write_byte('T'); err != nil {
+		return
+	}
+	if err = this.fifo.write_byte('A'); err != nil {
+		return
+	}
+	if err = this.fifo.write_byte('1'); err != nil {
+		return
+	}
+	if err = this.fifo.write_uint16(uint16(info.format)); err != nil {
+		return
+	}
+	if err = this.fifo.write_uint16(uint16(info.nch)); err != nil {
+		return
+	}
+	if err = this.fifo.write_uint16(uint16(info.bps)); err != nil {
+		return
+	}
+	if err = this.fifo.write_uint32(info.sps); err != nil {
+		return
+	}
+	if err = this.fifo.write_uint32(info.samples); err != nil {
+		return
+	}
+	if err = this.fifo.write_crc32(); err != nil {
+		return
+	}
+	size = 22
+	return
+
+}
+
 func (this *Encoder) SetInfo(info *tta_info, pos int64) (err error) {
 	if info.format > 2 ||
 		info.bps < MIN_BPS ||
@@ -266,7 +304,7 @@ func (this *Encoder) SetInfo(info *tta_info, pos int64) (err error) {
 	}
 	this.fifo.write_start()
 	var p uint32
-	if p, err = this.fifo.write_tta_header(info); err != nil {
+	if p, err = this.WriteHeader(info); err != nil {
 		return
 	}
 	this.offset = uint64(pos) + uint64(p)
