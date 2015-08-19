@@ -50,7 +50,7 @@ type tta_codec struct {
 }
 
 type tta_fifo struct {
-	buffer [TTA_FIFO_BUFFER_SIZE]byte
+	buffer [FIFO_BUFFER_SIZE]byte
 	pos    int32
 	end    int32
 	bcount uint32 // count of bits in cache
@@ -61,5 +61,3 @@ type tta_fifo struct {
 }
 
 type Callback func(uint32, uint32, uint32)
-
-var SSE_Enabled bool

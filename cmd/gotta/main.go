@@ -10,8 +10,10 @@ import (
 	"github.com/zyxar/tta"
 )
 
-var help, decode, encode bool
-var passwd string
+var (
+	help, decode, encode bool
+	passwd               string
+)
 
 func init() {
 	flag.BoolVar(&encode, "encode", false, "encode file")
@@ -21,10 +23,10 @@ func init() {
 }
 
 func main() {
-	fmt.Fprintf(os.Stderr, "\r\nTTA1 lossless audio encoder/decoder, version %s.%d\n\n", tta.TTA_VERSION, tta.BinaryVersion())
+	fmt.Fprintf(os.Stderr, "\r\nTTA1 lossless audio encoder/decoder, version %s{%d}\n\n", tta.VERSION, tta.BinaryVersion())
 	flag.Parse()
 	if help || flag.NArg() < 1 || (!decode && !encode) {
-		fmt.Fprintf(os.Stderr, "\rUsage of %s: [encode|decode] [passwd PASSWORD] INPUT_FILE OUTPUT_FILE\n\n", os.Args[0])
+		fmt.Fprintln(os.Stderr, "\rUsage of gotta: [encode|decode] [passwd PASSWORD] INPUT_FILE OUTPUT_FILE\n")
 		flag.PrintDefaults()
 		return
 	}

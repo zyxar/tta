@@ -29,7 +29,7 @@ func Compress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) (e
 	wave_hdr := WaveHeader{}
 	var data_size uint32
 	if data_size, err = wave_hdr.Read(infile); err != nil {
-		err = TTA_READ_ERROR
+		err = READ_ERROR
 		return
 	} else if data_size >= 0x7FFFFFFF {
 		err = fmt.Errorf("incorrect data size info in wav file: %x", data_size)
@@ -41,7 +41,7 @@ func Compress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) (e
 		(wave_hdr.num_channels > MAX_NCH) ||
 		(wave_hdr.bits_per_sample == 0) ||
 		(wave_hdr.bits_per_sample > MAX_BPS) {
-		err = TTA_FORMAT_ERROR
+		err = FORMAT_ERROR
 		return
 	}
 	encoder := NewEncoder(outfile)
@@ -50,12 +50,12 @@ func Compress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) (e
 		nch:     uint32(wave_hdr.num_channels),
 		bps:     uint32(wave_hdr.bits_per_sample),
 		sps:     wave_hdr.sample_rate,
-		format:  TTA_FORMAT_SIMPLE,
+		format:  FORMAT_SIMPLE,
 		samples: data_size / smp_size,
 	}
 	if len(passwd) > 0 {
 		encoder.SetPassword(passwd)
-		info.format = TTA_FORMAT_ENCRYPTED
+		info.format = FORMAT_ENCRYPTED
 	}
 	buf_size := PCM_BUFFER_LENGTH * smp_size
 	buffer := make([]byte, buf_size)
@@ -68,7 +68,7 @@ func Compress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) (e
 			buf_size = data_size
 		}
 		if read_len, err = infile.Read(buffer[:buf_size]); err != nil || read_len != int(buf_size) {
-			err = TTA_READ_ERROR
+			err = READ_ERROR
 			return
 		}
 		encoder.ProcessStream(buffer[:buf_size], cb)
@@ -293,12 +293,12 @@ func (this *Encoder) SetInfo(info *tta_info, pos int64) (err error) {
 		info.bps < MIN_BPS ||
 		info.bps > MAX_BPS ||
 		info.nch > MAX_NCH {
-		return TTA_FORMAT_ERROR
+		return FORMAT_ERROR
 	}
 	// set start position if required
 	if pos != 0 {
 		if _, err = this.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
-			err = TTA_SEEK_ERROR
+			err = SEEK_ERROR
 			return
 		}
 	}

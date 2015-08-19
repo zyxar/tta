@@ -225,7 +225,7 @@ func (this *Decoder) frame_init(frame uint32, seek_needed bool) (err error) {
 		pos := this.seek_table[this.fnum]
 		if pos != 0 {
 			if _, err = this.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
-				return TTA_SEEK_ERROR
+				return SEEK_ERROR
 			}
 		}
 		this.fifo.read_start()
@@ -259,7 +259,7 @@ func (this *Decoder) set_position(seconds uint32) (new_pos uint32, err error) {
 	var frame uint32 = (245 * (seconds) / 256)
 	new_pos = (256 * (frame) / 245)
 	if !this.seek_allowed || frame >= this.frames {
-		err = TTA_SEEK_ERROR
+		err = SEEK_ERROR
 		return
 	}
 	this.frame_init(frame, true)
@@ -271,7 +271,7 @@ func (this *Decoder) SetInfo(info *tta_info) error {
 		info.bps < MIN_BPS ||
 		info.bps > MAX_BPS ||
 		info.nch > MAX_NCH {
-		return TTA_FORMAT_ERROR
+		return FORMAT_ERROR
 	}
 	this.format = info.format
 	this.depth = (info.bps + 7) / 8
@@ -297,7 +297,7 @@ func (this *Decoder) ReadHeader(info *tta_info) (uint32, error) {
 		'T' != this.fifo.read_byte() ||
 		'A' != this.fifo.read_byte() ||
 		'1' != this.fifo.read_byte() {
-		return 0, TTA_FORMAT_ERROR
+		return 0, FORMAT_ERROR
 	}
 	info.format = uint32(this.fifo.read_uint16())
 	info.nch = uint32(this.fifo.read_uint16())
@@ -305,7 +305,7 @@ func (this *Decoder) ReadHeader(info *tta_info) (uint32, error) {
 	info.sps = this.fifo.read_uint32()
 	info.samples = this.fifo.read_uint32()
 	if !this.fifo.read_crc32() {
-		return 0, TTA_FILE_ERROR
+		return 0, FILE_ERROR
 	}
 	size += 22
 	return size, nil
@@ -314,7 +314,7 @@ func (this *Decoder) ReadHeader(info *tta_info) (uint32, error) {
 func (this *Decoder) GetInfo(info *tta_info, pos int64) (err error) {
 	if pos != 0 {
 		if _, err = this.fifo.io.Seek(pos, os.SEEK_SET); err != nil {
-			err = TTA_SEEK_ERROR
+			err = SEEK_ERROR
 			return
 		}
 	}
@@ -327,11 +327,11 @@ func (this *Decoder) GetInfo(info *tta_info, pos int64) (err error) {
 		info.bps < MIN_BPS ||
 		info.bps > MAX_BPS ||
 		info.nch > MAX_NCH {
-		return TTA_FORMAT_ERROR
+		return FORMAT_ERROR
 	}
-	if info.format == TTA_FORMAT_ENCRYPTED {
+	if info.format == FORMAT_ENCRYPTED {
 		if !this.password_set {
-			return TTA_PASSWORD_ERROR
+			return PASSWORD_ERROR
 		}
 	} else {
 		// disregard password if file is not encrypted

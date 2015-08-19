@@ -5,30 +5,31 @@ import (
 )
 
 const (
-	MAX_DEPTH            = 3
-	MAX_BPS              = (MAX_DEPTH * 8)
-	MIN_BPS              = 16
-	MAX_NCH              = 6
-	TTA_FIFO_BUFFER_SIZE = 5120
-	PCM_BUFFER_LENGTH    = 5120
+	MAX_DEPTH         = 3
+	MAX_BPS           = (MAX_DEPTH * 8)
+	MIN_BPS           = 16
+	MAX_NCH           = 6
+	FIFO_BUFFER_SIZE  = 5120
+	PCM_BUFFER_LENGTH = 5120
 
 	// TTA audio format
-	TTA_FORMAT_SIMPLE    = 1
-	TTA_FORMAT_ENCRYPTED = 2
-	TTA_VERSION          = "2.3-go"
+	FORMAT_SIMPLE    = 1
+	FORMAT_ENCRYPTED = 2
+
+	VERSION = "0.0.1"
 )
 
 var (
 	// TTA_CODEC_STATUS
-	TTA_NO_ERROR       error = nil // no known errors found
-	TTA_OPEN_ERROR           = errors.New("can't open file")
-	TTA_FORMAT_ERROR         = errors.New("not compatible file format")
-	TTA_FILE_ERROR           = errors.New("file is corrupted")
-	TTA_READ_ERROR           = errors.New("can't read from input file")
-	TTA_WRITE_ERROR          = errors.New("can't write to output file")
-	TTA_SEEK_ERROR           = errors.New("file seek error")
-	TTA_PASSWORD_ERROR       = errors.New("password protected file")
-	TTA_NOT_SUPPORTED        = errors.New("unsupported architecture")
+	NO_ERROR       error = nil // no known errors found
+	OPEN_ERROR           = errors.New("can't open file")
+	FORMAT_ERROR         = errors.New("not compatible file format")
+	FILE_ERROR           = errors.New("file is corrupted")
+	READ_ERROR           = errors.New("can't read from input file")
+	WRITE_ERROR          = errors.New("can't write to output file")
+	SEEK_ERROR           = errors.New("file seek error")
+	PASSWORD_ERROR       = errors.New("password protected file")
+	NOT_SUPPORTED        = errors.New("unsupported architecture")
 
 	PARTIAL_WRITTEN_ERROR = errors.New("partial written")
 	PARTIAL_READ_ERROR    = errors.New("partial read")
@@ -208,3 +209,4 @@ var crc64_table_hi = [256]uint32{
 } // crc64_table_hi
 
 var flt_set = [3]int32{10, 9, 10}
+var SSE_Enabled bool

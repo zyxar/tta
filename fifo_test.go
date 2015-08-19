@@ -6,12 +6,12 @@ import (
 
 func TestReadByte(t *testing.T) {
 	fifo := tta_fifo{}
-	for i := 0; i < TTA_FIFO_BUFFER_SIZE; i++ {
+	for i := 0; i < FIFO_BUFFER_SIZE; i++ {
 		fifo.buffer[i] = byte(i)
 	}
 	fifo.pos = 0
-	fifo.end = TTA_FIFO_BUFFER_SIZE
-	for i := 0; i < TTA_FIFO_BUFFER_SIZE; i++ {
+	fifo.end = FIFO_BUFFER_SIZE
+	for i := 0; i < FIFO_BUFFER_SIZE; i++ {
 		if fifo.read_byte() != byte(i&0xFF) {
 			t.Errorf("read_byte fail @ %d\n", i)
 		}
@@ -22,23 +22,23 @@ func TestReadByte(t *testing.T) {
 			t.Errorf("read_byte fail @ pos - %d\n", i)
 		}
 	}
-	if fifo.count != TTA_FIFO_BUFFER_SIZE {
+	if fifo.count != FIFO_BUFFER_SIZE {
 		t.Error("read_byte fail @ count")
 	}
-	if fifo.pos != TTA_FIFO_BUFFER_SIZE {
+	if fifo.pos != FIFO_BUFFER_SIZE {
 		t.Error("read_byte fail @ pos")
 	}
 }
 
 func TestReadUint16(t *testing.T) {
 	fifo := tta_fifo{}
-	for i := 0; i < TTA_FIFO_BUFFER_SIZE; i++ {
+	for i := 0; i < FIFO_BUFFER_SIZE; i++ {
 		fifo.buffer[i] = byte(i)
 	}
 	fifo.pos = 0
-	fifo.end = TTA_FIFO_BUFFER_SIZE
+	fifo.end = FIFO_BUFFER_SIZE
 	var v uint16
-	for i := 0; i < TTA_FIFO_BUFFER_SIZE/2; i++ {
+	for i := 0; i < FIFO_BUFFER_SIZE/2; i++ {
 		v = uint16((i*2+1)<<8) | (uint16(i*2) & 0xFF)
 		if fifo.read_uint16() != v {
 			t.Errorf("read_uint16 fail @ %d\n", i)
@@ -50,23 +50,23 @@ func TestReadUint16(t *testing.T) {
 			t.Errorf("read_uint16 fail @ pos - %d\n", i)
 		}
 	}
-	if fifo.count != TTA_FIFO_BUFFER_SIZE {
+	if fifo.count != FIFO_BUFFER_SIZE {
 		t.Error("read_uint16 fail @ count")
 	}
-	if fifo.pos != TTA_FIFO_BUFFER_SIZE {
+	if fifo.pos != FIFO_BUFFER_SIZE {
 		t.Error("read_uint16 fail @ pos")
 	}
 }
 
 func TestReadUint32(t *testing.T) {
 	fifo := tta_fifo{}
-	for i := 0; i < TTA_FIFO_BUFFER_SIZE; i++ {
+	for i := 0; i < FIFO_BUFFER_SIZE; i++ {
 		fifo.buffer[i] = byte(i)
 	}
 	fifo.pos = 0
-	fifo.end = TTA_FIFO_BUFFER_SIZE
+	fifo.end = FIFO_BUFFER_SIZE
 	var v uint32
-	for i := 0; i < TTA_FIFO_BUFFER_SIZE/4; i++ {
+	for i := 0; i < FIFO_BUFFER_SIZE/4; i++ {
 		if fifo.count != uint32(i*4) {
 			t.Errorf("read_uint32 fail @ count - %d\n", i)
 		}
@@ -78,10 +78,10 @@ func TestReadUint32(t *testing.T) {
 			t.Errorf("read_uint32 fail @ %d\n", i)
 		}
 	}
-	if fifo.count != TTA_FIFO_BUFFER_SIZE {
+	if fifo.count != FIFO_BUFFER_SIZE {
 		t.Error("read_uint32 fail @ count")
 	}
-	if fifo.pos != TTA_FIFO_BUFFER_SIZE {
+	if fifo.pos != FIFO_BUFFER_SIZE {
 		t.Error("read_uint32 fail @ pos")
 	}
 }
@@ -89,8 +89,8 @@ func TestReadUint32(t *testing.T) {
 func TestWriteByte(t *testing.T) {
 	fifo := tta_fifo{}
 	fifo.pos = 0
-	fifo.end = TTA_FIFO_BUFFER_SIZE
-	for i := 0; i < TTA_FIFO_BUFFER_SIZE; i++ {
+	fifo.end = FIFO_BUFFER_SIZE
+	for i := 0; i < FIFO_BUFFER_SIZE; i++ {
 		if err := fifo.write_byte(byte(i)); err != nil {
 			t.Errorf("write_byte fail @ %d, %v\n", i, err)
 		}
@@ -101,10 +101,10 @@ func TestWriteByte(t *testing.T) {
 			t.Errorf("write_byte fail @ pos - %d\n", i)
 		}
 	}
-	if fifo.count != TTA_FIFO_BUFFER_SIZE {
+	if fifo.count != FIFO_BUFFER_SIZE {
 		t.Error("write_byte fail @ count")
 	}
-	if fifo.pos != TTA_FIFO_BUFFER_SIZE {
+	if fifo.pos != FIFO_BUFFER_SIZE {
 		t.Error("write_byte fail @ pos")
 	}
 }
