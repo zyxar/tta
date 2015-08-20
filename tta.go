@@ -4,7 +4,7 @@ import (
 	"io"
 )
 
-type tta_info struct {
+type Info struct {
 	format  uint32 // audio format
 	nch     uint32 // number of channels
 	bps     uint32 // bits per sample
@@ -12,7 +12,7 @@ type tta_info struct {
 	samples uint32 // data length in samples
 }
 
-type tta_filter interface {
+type Filter interface {
 	Decode(*int32)
 	Encode(*int32)
 }
@@ -44,7 +44,7 @@ func (rice *tta_adapt) init(k0, k1 uint32) {
 }
 
 type tta_codec struct {
-	filter tta_filter
+	filter Filter
 	rice   tta_adapt
 	prev   int32
 }

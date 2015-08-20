@@ -46,7 +46,7 @@ func Compress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) (e
 	}
 	encoder := NewEncoder(outfile)
 	smp_size := uint32(wave_hdr.num_channels * ((wave_hdr.bits_per_sample + 7) / 8))
-	info := tta_info{
+	info := Info{
 		nch:     uint32(wave_hdr.num_channels),
 		bps:     uint32(wave_hdr.bits_per_sample),
 		sps:     wave_hdr.sample_rate,
@@ -250,7 +250,7 @@ func (this *Encoder) frame_reset(frame uint32, iocb io.ReadWriteSeeker) {
 	this.frame_init(frame)
 }
 
-func (this *Encoder) WriteHeader(info *tta_info) (size uint32, err error) {
+func (this *Encoder) WriteHeader(info *Info) (size uint32, err error) {
 	this.fifo.reset()
 	// write TTA1 signature
 	if err = this.fifo.write_byte('T'); err != nil {
@@ -288,7 +288,7 @@ func (this *Encoder) WriteHeader(info *tta_info) (size uint32, err error) {
 
 }
 
-func (this *Encoder) SetInfo(info *tta_info, pos int64) (err error) {
+func (this *Encoder) SetInfo(info *Info, pos int64) (err error) {
 	if info.format > 2 ||
 		info.bps < MIN_BPS ||
 		info.bps > MAX_BPS ||

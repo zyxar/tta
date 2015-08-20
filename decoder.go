@@ -30,7 +30,7 @@ func Decompress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) 
 	if len(passwd) > 0 {
 		decoder.SetPassword(passwd)
 	}
-	info := tta_info{}
+	info := Info{}
 	if err = decoder.GetInfo(&info, 0); err != nil {
 		return
 	}
@@ -266,7 +266,7 @@ func (this *Decoder) set_position(seconds uint32) (new_pos uint32, err error) {
 	return
 }
 
-func (this *Decoder) SetInfo(info *tta_info) error {
+func (this *Decoder) SetInfo(info *Info) error {
 	if info.format > 2 ||
 		info.bps < MIN_BPS ||
 		info.bps > MAX_BPS ||
@@ -290,7 +290,7 @@ func (this *Decoder) SetInfo(info *tta_info) error {
 	return nil
 }
 
-func (this *Decoder) ReadHeader(info *tta_info) (uint32, error) {
+func (this *Decoder) ReadHeader(info *Info) (uint32, error) {
 	size := this.fifo.skip_id3v2()
 	this.fifo.reset()
 	if 'T' != this.fifo.read_byte() ||
@@ -311,7 +311,7 @@ func (this *Decoder) ReadHeader(info *tta_info) (uint32, error) {
 	return size, nil
 }
 
-func (this *Decoder) GetInfo(info *tta_info, pos int64) (err error) {
+func (this *Decoder) GetInfo(info *Info, pos int64) (err error) {
 	if pos != 0 {
 		if _, err = this.fifo.io.Seek(pos, os.SEEK_SET); err != nil {
 			err = SEEK_ERROR
