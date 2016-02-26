@@ -6,23 +6,23 @@ import (
 )
 
 type Decoder struct {
-	codec        [MAX_NCH]tta_codec // 1 per channel
-	channels     int                // number of channels/codecs
-	data         [8]byte            // codec initialization data
-	fifo         tta_fifo
-	password_set bool     // password protection flag
-	seek_allowed bool     // seek table flag
-	seek_table   []uint64 // the playing position table
-	format       uint32   // tta data format
-	rate         uint32   // bitrate (kbps)
-	offset       uint64   // data start position (header size, bytes)
-	frames       uint32   // total count of frames
-	depth        uint32   // bytes per sample
-	flen_std     uint32   // default frame length in samples
-	flen_last    uint32   // last frame length in samples
-	flen         uint32   // current frame length in samples
-	fnum         uint32   // currently playing frame index
-	fpos         uint32   // the current position in frame
+	codec       [maxNCH]ttaCodec // 1 per channel
+	channels    int              // number of channels/codecs
+	data        [8]byte          // codec initialization data
+	fifo        ttaFifo
+	passwordSet bool     // password protection flag
+	seekAllowed bool     // seek table flag
+	seekTable   []uint64 // the playing position table
+	format      uint32   // tta data format
+	rate        uint32   // bitrate (kbps)
+	offset      uint64   // data start position (header size, bytes)
+	frames      uint32   // total count of frames
+	depth       uint32   // bytes per sample
+	flenStd     uint32   // default frame length in samples
+	flenLast    uint32   // last frame length in samples
+	flen        uint32   // current frame length in samples
+	fnum        uint32   // currently playing frame index
+	fpos        uint32   // the current position in frame
 }
 
 func Decompress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) (err error) {
@@ -34,36 +34,36 @@ func Decompress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) 
 	if err = decoder.GetInfo(&info, 0); err != nil {
 		return
 	}
-	smp_size := info.nch * ((info.bps + 7) / 8)
-	data_size := info.samples * smp_size
-	wave_hdr := WaveHeader{
-		chunk_id:        _RIFF_SIGN,
-		chunk_size:      data_size + 36,
-		format:          _WAVE_SIGN,
-		subchunk_id:     _FMT_SIGN,
-		subchunk_size:   16,
-		audio_format:    1,
-		num_channels:    uint16(info.nch),
-		sample_rate:     info.sps,
-		bits_per_sample: uint16(info.bps),
-		byte_rate:       info.sps * smp_size,
-		block_align:     uint16(smp_size),
+	smpSize := info.nch * ((info.bps + 7) / 8)
+	dataSize := info.samples * smpSize
+	waveHdr := WaveHeader{
+		chunkId:       riffSign,
+		chunkSize:     dataSize + 36,
+		format:        waveSign,
+		subchunkId:    fmtSign,
+		subchunkSize:  16,
+		audioFormat:   1,
+		numChannels:   uint16(info.nch),
+		sampleRate:    info.sps,
+		bitsPerSample: uint16(info.bps),
+		byteRate:      info.sps * smpSize,
+		blockAlign:    uint16(smpSize),
 	}
-	if err = wave_hdr.Write(outfile, data_size); err != nil {
+	if err = waveHdr.Write(outfile, dataSize); err != nil {
 		return
 	}
-	buf_size := PCM_BUFFER_LENGTH * smp_size
-	buffer := make([]byte, buf_size)
-	var write_len int
+	bufSize := pcmBufferLength * smpSize
+	buffer := make([]byte, bufSize)
+	var writeLen int
 	for {
-		if write_len = int(uint32(decoder.ProcessStream(buffer, cb)) * smp_size); write_len == 0 {
+		if writeLen = int(uint32(decoder.ProcessStream(buffer, cb)) * smpSize); writeLen == 0 {
 			break
 		}
-		buf := buffer[:write_len]
-		if write_len, err = outfile.Write(buf); err != nil {
+		buf := buffer[:writeLen]
+		if writeLen, err = outfile.Write(buf); err != nil {
 			return
-		} else if write_len != len(buf) {
-			err = PARTIAL_WRITTEN_ERROR
+		} else if writeLen != len(buf) {
+			err = errPartialWritten
 			return
 		}
 	}
@@ -76,26 +76,26 @@ func NewDecoder(iocb io.ReadWriteSeeker) *Decoder {
 	return &dec
 }
 
-func (this *Decoder) ProcessStream(out []byte, cb Callback) int32 {
-	var cache [MAX_NCH]int32
+func (d *Decoder) ProcessStream(out []byte, cb Callback) int32 {
+	var cache [maxNCH]int32
 	var value int32
-	var ret int32 = 0
+	var ret int32
 	i := 0
-	out_ := out[:]
-	for this.fpos < this.flen && len(out_) > 0 {
-		value = this.fifo.get_value(&this.codec[i].rice)
+	outClone := out[:]
+	for d.fpos < d.flen && len(outClone) > 0 {
+		value = d.fifo.getValue(&d.codec[i].rice)
 		// decompress stage 1: adaptive hybrid filter
-		this.codec[i].filter.Decode(&value)
+		d.codec[i].filter.Decode(&value)
 		// decompress stage 2: fixed order 1 prediction
-		value += ((this.codec[i].prev * ((1 << 5) - 1)) >> 5)
-		this.codec[i].prev = value
+		value += ((d.codec[i].prev * ((1 << 5) - 1)) >> 5)
+		d.codec[i].prev = value
 		cache[i] = value
-		if i < this.channels-1 {
+		if i < d.channels-1 {
 			i++
 		} else {
-			if this.channels == 1 {
-				write_buffer(value, out_, this.depth)
-				out_ = out_[this.depth:]
+			if d.channels == 1 {
+				writeBuffer(value, outClone, d.depth)
+				outClone = outClone[d.depth:]
 			} else {
 				k := i - 1
 				cache[i] += cache[k] / 2
@@ -105,62 +105,62 @@ func (this *Decoder) ProcessStream(out []byte, cb Callback) int32 {
 				}
 				cache[k] = cache[k+1] - cache[k]
 				for k <= i {
-					write_buffer(cache[k], out_, this.depth)
-					out_ = out_[this.depth:]
+					writeBuffer(cache[k], outClone, d.depth)
+					outClone = outClone[d.depth:]
 					k++
 				}
 			}
 			i = 0
-			this.fpos++
+			d.fpos++
 			ret++
 		}
-		if this.fpos == this.flen {
+		if d.fpos == d.flen {
 			// check frame crc
-			crc_flag := !this.fifo.read_crc32()
-			if crc_flag {
+			crcFlag := !d.fifo.readCrc32()
+			if crcFlag {
 				for i := 0; i < len(out); i++ {
 					out[i] = 0
 				}
-				if !this.seek_allowed {
+				if !d.seekAllowed {
 					break
 				}
 			}
-			this.fnum++
+			d.fnum++
 
 			// update dynamic info
-			this.rate = (this.fifo.count << 3) / 1070
+			d.rate = (d.fifo.count << 3) / 1070
 			if cb != nil {
-				cb(this.rate, this.fnum, this.frames)
+				cb(d.rate, d.fnum, d.frames)
 			}
-			if this.fnum == this.frames {
+			if d.fnum == d.frames {
 				break
 			}
-			this.frame_init(this.fnum, crc_flag)
+			d.frameInit(d.fnum, crcFlag)
 		}
 	}
 	return ret
 }
 
-func (this *Decoder) ProcessFrame(in_size uint32, out []byte) int32 {
+func (d *Decoder) ProcessFrame(inSize uint32, out []byte) int32 {
 	i := 0
-	var cache [MAX_NCH]int32
+	var cache [maxNCH]int32
 	var value int32
-	var ret int32 = 0
-	out_ := out[:]
-	for this.fifo.count < in_size && len(out_) > 0 {
-		value = this.fifo.get_value(&this.codec[i].rice)
+	var ret int32
+	outClone := out[:]
+	for d.fifo.count < inSize && len(outClone) > 0 {
+		value = d.fifo.getValue(&d.codec[i].rice)
 		// decompress stage 1: adaptive hybrid filter
-		this.codec[i].filter.Decode(&value)
+		d.codec[i].filter.Decode(&value)
 		// decompress stage 2: fixed order 1 prediction
-		value += ((this.codec[i].prev * ((1 << 5) - 1)) >> 5)
-		this.codec[i].prev = value
+		value += ((d.codec[i].prev * ((1 << 5) - 1)) >> 5)
+		d.codec[i].prev = value
 		cache[i] = value
-		if i < this.channels-1 {
+		if i < d.channels-1 {
 			i++
 		} else {
-			if this.channels == 1 {
-				write_buffer(value, out_, this.depth)
-				out_ = out_[this.depth:]
+			if d.channels == 1 {
+				writeBuffer(value, outClone, d.depth)
+				outClone = outClone[d.depth:]
 			} else {
 				j := i
 				k := i - 1
@@ -172,187 +172,187 @@ func (this *Decoder) ProcessFrame(in_size uint32, out []byte) int32 {
 				}
 				cache[k] = cache[j] - cache[k]
 				for k <= i {
-					write_buffer(cache[k], out_, this.depth)
-					out_ = out_[this.depth:]
+					writeBuffer(cache[k], outClone, d.depth)
+					outClone = outClone[d.depth:]
 					k++
 				}
 			}
 			i = 0
-			this.fpos++
+			d.fpos++
 			ret++
 		}
 
-		if this.fpos == this.flen || this.fifo.count == in_size-4 {
+		if d.fpos == d.flen || d.fifo.count == inSize-4 {
 			// check frame crc
-			if !this.fifo.read_crc32() {
+			if !d.fifo.readCrc32() {
 				for i := 0; i < len(out); i++ {
 					out[i] = 0
 				}
 			}
 			// update dynamic info
-			this.rate = (this.fifo.count << 3) / 1070
+			d.rate = (d.fifo.count << 3) / 1070
 			break
 		}
 	}
 	return ret
 }
 
-func (this *Decoder) read_seek_table() bool {
-	if this.seek_table == nil {
+func (d *Decoder) readSeekTable() bool {
+	if d.seekTable == nil {
 		return false
 	}
-	this.fifo.reset()
-	tmp := this.offset + uint64(this.frames+1)*4
-	for i := uint32(0); i < this.frames; i++ {
-		this.seek_table[i] = tmp
-		tmp += uint64(this.fifo.read_uint32())
+	d.fifo.reset()
+	tmp := d.offset + uint64(d.frames+1)*4
+	for i := uint32(0); i < d.frames; i++ {
+		d.seekTable[i] = tmp
+		tmp += uint64(d.fifo.readUint32())
 	}
-	return this.fifo.read_crc32()
+	return d.fifo.readCrc32()
 }
 
-func (this *Decoder) SetPassword(pass string) {
-	this.data = compute_key_digits(convert_password(pass))
-	this.password_set = true
+func (d *Decoder) SetPassword(pass string) {
+	d.data = computeKeyDigits(convertPassword(pass))
+	d.passwordSet = true
 }
 
-func (this *Decoder) frame_init(frame uint32, seek_needed bool) (err error) {
-	if frame >= this.frames {
+func (d *Decoder) frameInit(frame uint32, seekNeeded bool) (err error) {
+	if frame >= d.frames {
 		return
 	}
-	shift := flt_set[this.depth-1]
-	this.fnum = frame
-	if seek_needed && this.seek_allowed {
-		pos := this.seek_table[this.fnum]
+	shift := fltSet[d.depth-1]
+	d.fnum = frame
+	if seekNeeded && d.seekAllowed {
+		pos := d.seekTable[d.fnum]
 		if pos != 0 {
-			if _, err = this.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
-				return SEEK_ERROR
+			if _, err = d.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
+				return errSeek
 			}
 		}
-		this.fifo.read_start()
+		d.fifo.readStart()
 	}
-	if this.fnum == this.frames-1 {
-		this.flen = this.flen_last
+	if d.fnum == d.frames-1 {
+		d.flen = d.flenLast
 	} else {
-		this.flen = this.flen_std
+		d.flen = d.flenStd
 	}
-	for i := 0; i < this.channels; i++ {
-		if SSE_Enabled {
-			this.codec[i].filter = NewSSEFilter(this.data, shift)
+	for i := 0; i < d.channels; i++ {
+		if sseEnabled {
+			d.codec[i].filter = NewSSEFilter(d.data, shift)
 		} else {
-			this.codec[i].filter = NewCompatibleFilter(this.data, shift)
+			d.codec[i].filter = NewCompatibleFilter(d.data, shift)
 		}
-		this.codec[i].rice.init(10, 10)
-		this.codec[i].prev = 0
+		d.codec[i].rice.init(10, 10)
+		d.codec[i].prev = 0
 	}
-	this.fpos = 0
-	this.fifo.reset()
+	d.fpos = 0
+	d.fifo.reset()
 	return
 }
 
-func (this *Decoder) frame_reset(frame uint32, iocb io.ReadWriteSeeker) {
-	this.fifo.io = iocb
-	this.fifo.read_start()
-	this.frame_init(frame, false)
+func (d *Decoder) frameReset(frame uint32, iocb io.ReadWriteSeeker) {
+	d.fifo.io = iocb
+	d.fifo.readStart()
+	d.frameInit(frame, false)
 }
 
-func (this *Decoder) set_position(seconds uint32) (new_pos uint32, err error) {
-	var frame uint32 = (245 * (seconds) / 256)
-	new_pos = (256 * (frame) / 245)
-	if !this.seek_allowed || frame >= this.frames {
-		err = SEEK_ERROR
+func (d *Decoder) setPosition(seconds uint32) (newPos uint32, err error) {
+	var frame = (245 * (seconds) / 256)
+	newPos = (256 * (frame) / 245)
+	if !d.seekAllowed || frame >= d.frames {
+		err = errSeek
 		return
 	}
-	this.frame_init(frame, true)
+	d.frameInit(frame, true)
 	return
 }
 
-func (this *Decoder) SetInfo(info *Info) error {
+func (d *Decoder) SetInfo(info *Info) error {
 	if info.format > 2 ||
-		info.bps < MIN_BPS ||
-		info.bps > MAX_BPS ||
-		info.nch > MAX_NCH {
-		return FORMAT_ERROR
+		info.bps < minBPS ||
+		info.bps > maxBPS ||
+		info.nch > maxNCH {
+		return errFormat
 	}
-	this.format = info.format
-	this.depth = (info.bps + 7) / 8
-	this.flen_std = (256 * (info.sps) / 245)
-	this.flen_last = info.samples % this.flen_std
-	this.frames = info.samples / this.flen_std
-	if this.flen_last != 0 {
-		this.frames += 1
+	d.format = info.format
+	d.depth = (info.bps + 7) / 8
+	d.flenStd = (256 * (info.sps) / 245)
+	d.flenLast = info.samples % d.flenStd
+	d.frames = info.samples / d.flenStd
+	if d.flenLast != 0 {
+		d.frames++
 	} else {
-		this.flen_last = this.flen_std
+		d.flenLast = d.flenStd
 	}
-	this.rate = 0
-	this.channels = int(info.nch)
-	this.fifo.read_start()
-	this.frame_init(0, false)
+	d.rate = 0
+	d.channels = int(info.nch)
+	d.fifo.readStart()
+	d.frameInit(0, false)
 	return nil
 }
 
-func (this *Decoder) ReadHeader(info *Info) (uint32, error) {
-	size := this.fifo.skip_id3v2()
-	this.fifo.reset()
-	if 'T' != this.fifo.read_byte() ||
-		'T' != this.fifo.read_byte() ||
-		'A' != this.fifo.read_byte() ||
-		'1' != this.fifo.read_byte() {
-		return 0, FORMAT_ERROR
+func (d *Decoder) ReadHeader(info *Info) (uint32, error) {
+	size := d.fifo.skipId3v2()
+	d.fifo.reset()
+	if 'T' != d.fifo.readByte() ||
+		'T' != d.fifo.readByte() ||
+		'A' != d.fifo.readByte() ||
+		'1' != d.fifo.readByte() {
+		return 0, errFormat
 	}
-	info.format = uint32(this.fifo.read_uint16())
-	info.nch = uint32(this.fifo.read_uint16())
-	info.bps = uint32(this.fifo.read_uint16())
-	info.sps = this.fifo.read_uint32()
-	info.samples = this.fifo.read_uint32()
-	if !this.fifo.read_crc32() {
-		return 0, FILE_ERROR
+	info.format = uint32(d.fifo.readUint16())
+	info.nch = uint32(d.fifo.readUint16())
+	info.bps = uint32(d.fifo.readUint16())
+	info.sps = d.fifo.readUint32()
+	info.samples = d.fifo.readUint32()
+	if !d.fifo.readCrc32() {
+		return 0, errFile
 	}
 	size += 22
 	return size, nil
 }
 
-func (this *Decoder) GetInfo(info *Info, pos int64) (err error) {
+func (d *Decoder) GetInfo(info *Info, pos int64) (err error) {
 	if pos != 0 {
-		if _, err = this.fifo.io.Seek(pos, os.SEEK_SET); err != nil {
-			err = SEEK_ERROR
+		if _, err = d.fifo.io.Seek(pos, os.SEEK_SET); err != nil {
+			err = errSeek
 			return
 		}
 	}
-	this.fifo.read_start()
+	d.fifo.readStart()
 	var p uint32
-	if p, err = this.ReadHeader(info); err != nil {
+	if p, err = d.ReadHeader(info); err != nil {
 		return
 	}
 	if info.format > 2 ||
-		info.bps < MIN_BPS ||
-		info.bps > MAX_BPS ||
-		info.nch > MAX_NCH {
-		return FORMAT_ERROR
+		info.bps < minBPS ||
+		info.bps > maxBPS ||
+		info.nch > maxNCH {
+		return errFormat
 	}
-	if info.format == FORMAT_ENCRYPTED {
-		if !this.password_set {
-			return PASSWORD_ERROR
+	if info.format == formatEncrypted {
+		if !d.passwordSet {
+			return errPassword
 		}
 	} else {
 		// disregard password if file is not encrypted
-		this.password_set = false
-		this.data = [8]byte{}
+		d.passwordSet = false
+		d.data = [8]byte{}
 	}
-	this.offset = uint64(pos) + uint64(p)
-	this.format = info.format
-	this.depth = (info.bps + 7) / 8
-	this.flen_std = (256 * (info.sps) / 245)
-	this.flen_last = info.samples % this.flen_std
-	this.frames = info.samples / this.flen_std
-	if this.flen_last != 0 {
-		this.frames += 1
+	d.offset = uint64(pos) + uint64(p)
+	d.format = info.format
+	d.depth = (info.bps + 7) / 8
+	d.flenStd = (256 * (info.sps) / 245)
+	d.flenLast = info.samples % d.flenStd
+	d.frames = info.samples / d.flenStd
+	if d.flenLast != 0 {
+		d.frames++
 	} else {
-		this.flen_last = this.flen_std
+		d.flenLast = d.flenStd
 	}
-	this.rate = 0
-	this.seek_table = make([]uint64, this.frames)
-	this.seek_allowed = this.read_seek_table()
-	this.channels = int(info.nch)
-	this.frame_init(0, false)
+	d.rate = 0
+	d.seekTable = make([]uint64, d.frames)
+	d.seekAllowed = d.readSeekTable()
+	d.channels = int(info.nch)
+	d.frameInit(0, false)
 	return
 }

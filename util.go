@@ -5,34 +5,34 @@ import (
 )
 
 func BinaryVersion() byte {
-	if SSE_Enabled {
-		return CPU_ARCH_IX86_SSE4_1
+	if sseEnabled {
+		return cpuArchIx86Sse4_1
 	}
-	return CPU_ARCH_UNDEFINED
+	return cpuArchUndefined
 }
 
-func compute_key_digits(p []byte) [8]byte {
-	var crc_lo, crc_hi uint32 = 0xFFFFFFFF, 0xFFFFFFFF
+func computeKeyDigits(p []byte) [8]byte {
+	var crcLow, crcHigh uint32 = 0xFFFFFFFF, 0xFFFFFFFF
 	for i := 0; i < len(p); i++ {
-		index := (crc_hi >> 24) ^ uint32(p[i])&0xFF
-		crc_hi = crc64_table_hi[index] ^ ((crc_hi << 8) | (crc_lo >> 24))
-		crc_lo = crc64_table_lo[index] ^ (crc_lo << 8)
+		index := (crcHigh >> 24) ^ uint32(p[i])&0xFF
+		crcHigh = crc64TableHigh[index] ^ ((crcHigh << 8) | (crcLow >> 24))
+		crcLow = crc64TableLow[index] ^ (crcLow << 8)
 	}
-	crc_lo ^= 0xFFFFFFFF
-	crc_hi ^= 0xFFFFFFFF
+	crcLow ^= 0xFFFFFFFF
+	crcHigh ^= 0xFFFFFFFF
 	return [8]byte{
-		byte((crc_lo) & 0xFF),
-		byte((crc_lo >> 8) & 0xFF),
-		byte((crc_lo >> 16) & 0xFF),
-		byte((crc_lo >> 24) & 0xFF),
-		byte((crc_hi) & 0xFF),
-		byte((crc_hi >> 8) & 0xFF),
-		byte((crc_hi >> 16) & 0xFF),
-		byte((crc_hi >> 24) & 0xFF),
+		byte((crcLow) & 0xFF),
+		byte((crcLow >> 8) & 0xFF),
+		byte((crcLow >> 16) & 0xFF),
+		byte((crcLow >> 24) & 0xFF),
+		byte((crcHigh) & 0xFF),
+		byte((crcHigh >> 8) & 0xFF),
+		byte((crcHigh >> 16) & 0xFF),
+		byte((crcHigh >> 24) & 0xFF),
 	}
 }
 
-func convert_password(src string) []byte {
+func convertPassword(src string) []byte {
 	dst := make([]byte, len(src))
 	for i := 0; i < len(src); i++ {
 		if src[i]&0xF0 == 0xF0 {
@@ -50,7 +50,7 @@ func convert_password(src string) []byte {
 	return dst
 }
 
-func write_buffer(src int32, p []byte, depth uint32) {
+func writeBuffer(src int32, p []byte, depth uint32) {
 	switch depth {
 	case 2:
 		binary.LittleEndian.PutUint16(p, uint16(0xFFFF&src))
@@ -61,7 +61,7 @@ func write_buffer(src int32, p []byte, depth uint32) {
 	}
 }
 
-func read_buffer(p []byte, depth uint32) (v int32) {
+func readBuffer(p []byte, depth uint32) (v int32) {
 	switch depth {
 	case 2:
 		v = int32(int16(binary.LittleEndian.Uint16(p)))

@@ -4,8 +4,10 @@ import (
 	"github.com/klauspost/cpuid"
 )
 
+var sseEnabled bool
+
 func init() {
 	if cpuid.CPU.SSE4() {
-		// SSE_Enabled = true // use this if SSE optimization is done
+		// sseEnabled = true // use this if SSE optimization is done
 	}
 }

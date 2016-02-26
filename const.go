@@ -5,45 +5,45 @@ import (
 )
 
 const (
-	MAX_DEPTH         = 3
-	MAX_BPS           = (MAX_DEPTH * 8)
-	MIN_BPS           = 16
-	MAX_NCH           = 6
-	FIFO_BUFFER_SIZE  = 5120
-	PCM_BUFFER_LENGTH = 5120
+	maxDepth        = 3
+	maxBPS          = (maxDepth * 8)
+	minBPS          = 16
+	maxNCH          = 6
+	fifoBufferSize  = 5120
+	pcmBufferLength = 5120
 
 	// TTA audio format
-	FORMAT_SIMPLE    = 1
-	FORMAT_ENCRYPTED = 2
+	formatSimple    = 1
+	formatEncrypted = 2
 
-	VERSION = "0.0.1"
+	// Version of TTA lib
+	Version = "0.0.1"
 )
 
 var (
 	// TTA_CODEC_STATUS
-	NO_ERROR       error = nil // no known errors found
-	OPEN_ERROR           = errors.New("can't open file")
-	FORMAT_ERROR         = errors.New("not compatible file format")
-	FILE_ERROR           = errors.New("file is corrupted")
-	READ_ERROR           = errors.New("can't read from input file")
-	WRITE_ERROR          = errors.New("can't write to output file")
-	SEEK_ERROR           = errors.New("file seek error")
-	PASSWORD_ERROR       = errors.New("password protected file")
-	NOT_SUPPORTED        = errors.New("unsupported architecture")
-
-	PARTIAL_WRITTEN_ERROR = errors.New("partial written")
-	PARTIAL_READ_ERROR    = errors.New("partial read")
+	errOpen         = errors.New("can't open file")
+	errFormat       = errors.New("not compatible file format")
+	errFile         = errors.New("file is corrupted")
+	errRead         = errors.New("can't read from input file")
+	errWrite        = errors.New("can't write to output file")
+	errSeek         = errors.New("file seek error")
+	errPassword     = errors.New("password protected file")
+	errNotSupported = errors.New("unsupported architecture")
+	// Partial io
+	errPartialWritten = errors.New("partial written")
+	errPartialRead    = errors.New("partial read")
 )
 
 const ( // CPU_ARCH_TYPE
-	CPU_ARCH_UNDEFINED = iota
-	CPU_ARCH_IX86_SSE2
-	CPU_ARCH_IX86_SSE3
-	CPU_ARCH_IX86_SSE4_1
-	CPU_ARCH_IX86_SSE4_2
+	cpuArchUndefined = iota
+	cpuArchIx86Sse2
+	cpuArchIx86Sse3
+	cpuArchIx86Sse4_1
+	cpuArchIx86Sse4_2
 )
 
-var bit_mask = []uint32{
+var bitMask = []uint32{
 	0x00000000, 0x00000001, 0x00000003, 0x00000007,
 	0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f,
 	0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff,
@@ -53,9 +53,9 @@ var bit_mask = []uint32{
 	0x00ffffff, 0x01ffffff, 0x03ffffff, 0x07ffffff,
 	0x0fffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff,
 	0xffffffff,
-} // bit_mask
+}
 
-var bit_shift = []uint32{
+var bitShift = []uint32{
 	0x00000001, 0x00000002, 0x00000004, 0x00000008,
 	0x00000010, 0x00000020, 0x00000040, 0x00000080,
 	0x00000100, 0x00000200, 0x00000400, 0x00000800,
@@ -66,11 +66,11 @@ var bit_shift = []uint32{
 	0x10000000, 0x20000000, 0x40000000, 0x80000000,
 	0x80000000, 0x80000000, 0x80000000, 0x80000000,
 	0x80000000, 0x80000000, 0x80000000, 0x80000000,
-} // bit_shift
+}
 
-var shift_16 = bit_shift[4:]
+var shift16 = bitShift[4:]
 
-var crc32_table = [256]uint32{
+var crc32Table = [256]uint32{
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
 	0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
 	0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
@@ -114,9 +114,9 @@ var crc32_table = [256]uint32{
 	0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605, 0xcdd70693,
 	0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
 	0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d,
-} // crc32_table
+}
 
-var crc64_table_lo = [256]uint32{
+var crc64TableLow = [256]uint32{
 	0x00000000, 0xa9ea3693, 0x53d46d26, 0xfa3e5bb5, 0x0e42ecdf, 0xa7a8da4c,
 	0x5d9681f9, 0xf47cb76a, 0x1c85d9be, 0xb56fef2d, 0x4f51b498, 0xe6bb820b,
 	0x12c73561, 0xbb2d03f2, 0x41135847, 0xe8f96ed4, 0x90e185ef, 0x390bb37c,
@@ -160,9 +160,9 @@ var crc64_table_lo = [256]uint32{
 	0x267cdbd3, 0x8f96ed40, 0x75a8b6f5, 0xdc428066, 0x283e370c, 0x81d4019f,
 	0x7bea5a2a, 0xd2006cb9, 0x3af9026d, 0x931334fe, 0x692d6f4b, 0xc0c759d8,
 	0x34bbeeb2, 0x9d51d821, 0x676f8394, 0xce85b507,
-} // crc64_table_lo
+}
 
-var crc64_table_hi = [256]uint32{
+var crc64TableHigh = [256]uint32{
 	0x00000000, 0x42f0e1eb, 0x85e1c3d7, 0xc711223c, 0x49336645, 0x0bc387ae,
 	0xccd2a592, 0x8e224479, 0x9266cc8a, 0xd0962d61, 0x17870f5d, 0x5577eeb6,
 	0xdb55aacf, 0x99a54b24, 0x5eb46918, 0x1c4488f3, 0x663d78ff, 0x24cd9914,
@@ -206,7 +206,6 @@ var crc64_table_hi = [256]uint32{
 	0x86b86ed5, 0xc4488f3e, 0x0359ad02, 0x41a94ce9, 0xcf8b0890, 0x8d7be97b,
 	0x4a6acb47, 0x089a2aac, 0x14dea25f, 0x562e43b4, 0x913f6188, 0xd3cf8063,
 	0x5dedc41a, 0x1f1d25f1, 0xd80c07cd, 0x9afce626,
-} // crc64_table_hi
+}
 
-var flt_set = [3]int32{10, 9, 10}
-var SSE_Enabled bool
+var fltSet = [3]int32{10, 9, 10}

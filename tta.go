@@ -17,7 +17,7 @@ type Filter interface {
 	Encode(*int32)
 }
 
-type tta_filter_compat struct {
+type ttaFilterCompat struct {
 	index int32
 	error int32
 	round int32
@@ -27,30 +27,30 @@ type tta_filter_compat struct {
 	dl    [24]int32
 }
 
-type tta_filter_sse tta_filter_compat
+type ttaFilterSse ttaFilterCompat
 
-type tta_adapt struct {
+type ttaAdapt struct {
 	k0   uint32
 	k1   uint32
 	sum0 uint32
 	sum1 uint32
 }
 
-func (rice *tta_adapt) init(k0, k1 uint32) {
+func (rice *ttaAdapt) init(k0, k1 uint32) {
 	rice.k0 = k0
 	rice.k1 = k1
-	rice.sum0 = shift_16[k0]
-	rice.sum1 = shift_16[k1]
+	rice.sum0 = shift16[k0]
+	rice.sum1 = shift16[k1]
 }
 
-type tta_codec struct {
+type ttaCodec struct {
 	filter Filter
-	rice   tta_adapt
+	rice   ttaAdapt
 	prev   int32
 }
 
-type tta_fifo struct {
-	buffer [FIFO_BUFFER_SIZE]byte
+type ttaFifo struct {
+	buffer [fifoBufferSize]byte
 	pos    int32
 	end    int32
 	bcount uint32 // count of bits in cache

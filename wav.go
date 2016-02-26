@@ -8,39 +8,39 @@ import (
 )
 
 const (
-	_RIFF_SIGN = 0x46464952
-	_WAVE_SIGN = 0x45564157
-	_FMT_SIGN  = 0x20746D66
-	_DATA_SIGN = 0x61746164
+	riffSign = 0x46464952
+	waveSign = 0x45564157
+	fmtSign  = 0x20746D66
+	dataSign = 0x61746164
 
-	_WAVE_FORMAT_PCM        = 1
-	_WAVE_FORMAT_EXTENSIBLE = 0xFFFE
+	waveFormatPcm        = 1
+	waveFormatExtensible = 0xFFFE
 )
 
 type WaveHeader struct {
-	chunk_id        uint32
-	chunk_size      uint32
-	format          uint32
-	subchunk_id     uint32
-	subchunk_size   uint32
-	audio_format    uint16
-	num_channels    uint16
-	sample_rate     uint32
-	byte_rate       uint32
-	block_align     uint16
-	bits_per_sample uint16
+	chunkId       uint32
+	chunkSize     uint32
+	format        uint32
+	subchunkId    uint32
+	subchunkSize  uint32
+	audioFormat   uint16
+	numChannels   uint16
+	sampleRate    uint32
+	byteRate      uint32
+	blockAlign    uint16
+	bitsPerSample uint16
 }
 
 type WaveSubchunkHeader struct {
-	subchunk_id   uint32
-	subchunk_size uint32
+	subchunkId   uint32
+	subchunkSize uint32
 }
 
 type WaveExtHeader struct {
-	cb_size    uint16
-	valid_bits uint16
-	ch_mask    uint32
-	est        struct {
+	cbSize    uint16
+	validBits uint16
+	chMask    uint32
+	est       struct {
 		f1 uint32
 		f2 uint16
 		f3 uint16
@@ -48,99 +48,99 @@ type WaveExtHeader struct {
 	} // WaveSubformat
 }
 
-func (this *WaveHeader) Bytes() []byte {
-	size := int(unsafe.Sizeof(*this))
+func (w *WaveHeader) Bytes() []byte {
+	size := int(unsafe.Sizeof(*w))
 	return *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(this)),
+		Data: uintptr(unsafe.Pointer(w)),
 		Len:  size,
 		Cap:  size,
 	}))
 }
 
-func (this *WaveSubchunkHeader) Bytes() []byte {
-	size := int(unsafe.Sizeof(*this))
+func (w *WaveSubchunkHeader) Bytes() []byte {
+	size := int(unsafe.Sizeof(*w))
 	return *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(this)),
+		Data: uintptr(unsafe.Pointer(w)),
 		Len:  size,
 		Cap:  size,
 	}))
 }
 
-func (this *WaveExtHeader) Bytes() []byte {
-	size := int(unsafe.Sizeof(*this))
+func (w *WaveExtHeader) Bytes() []byte {
+	size := int(unsafe.Sizeof(*w))
 	return *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(this)),
+		Data: uintptr(unsafe.Pointer(w)),
 		Len:  size,
 		Cap:  size,
 	}))
 }
 
-func (this *WaveHeader) Read(fd io.ReadSeeker) (subchunk_size uint32, err error) {
-	var default_subchunk_size uint32 = 16
-	b := this.Bytes()
-	var read_len int
+func (w *WaveHeader) Read(fd io.ReadSeeker) (subchunkSize uint32, err error) {
+	var defaultSubchunkSize uint32 = 16
+	b := w.Bytes()
+	var readLen int
 	// Read WAVE header
-	if read_len, err = fd.Read(b); err != nil {
+	if readLen, err = fd.Read(b); err != nil {
 		return
-	} else if read_len != len(b) {
-		err = PARTIAL_READ_ERROR
+	} else if readLen != len(b) {
+		err = errPartialRead
 		return
 	}
-	if this.audio_format == _WAVE_FORMAT_EXTENSIBLE {
-		wave_hdr_ex := WaveExtHeader{}
-		if read_len, err = fd.Read(wave_hdr_ex.Bytes()); err != nil {
+	if w.audioFormat == waveFormatExtensible {
+		waveHdrEx := WaveExtHeader{}
+		if readLen, err = fd.Read(waveHdrEx.Bytes()); err != nil {
 			return
-		} else if read_len != int(unsafe.Sizeof(wave_hdr_ex)) {
-			err = PARTIAL_READ_ERROR
+		} else if readLen != int(unsafe.Sizeof(waveHdrEx)) {
+			err = errPartialRead
 			return
 		}
-		default_subchunk_size += uint32(unsafe.Sizeof(wave_hdr_ex))
-		this.audio_format = uint16(wave_hdr_ex.est.f1)
+		defaultSubchunkSize += uint32(unsafe.Sizeof(waveHdrEx))
+		w.audioFormat = uint16(waveHdrEx.est.f1)
 	}
 
 	// Skip extra format bytes
-	if this.subchunk_size > default_subchunk_size {
-		extra_len := this.subchunk_size - default_subchunk_size
-		if _, err = fd.Seek(int64(extra_len), os.SEEK_SET); err != nil {
+	if w.subchunkSize > defaultSubchunkSize {
+		extraLen := w.subchunkSize - defaultSubchunkSize
+		if _, err = fd.Seek(int64(extraLen), os.SEEK_SET); err != nil {
 			return
 		}
 	}
 
 	// Skip unsupported chunks
-	subchunk_hdr := WaveSubchunkHeader{}
+	subchunkHdr := WaveSubchunkHeader{}
 	for {
-		if read_len, err = fd.Read(subchunk_hdr.Bytes()); err != nil {
+		if readLen, err = fd.Read(subchunkHdr.Bytes()); err != nil {
 			return
-		} else if read_len != int(unsafe.Sizeof(subchunk_hdr)) {
-			err = PARTIAL_READ_ERROR
+		} else if readLen != int(unsafe.Sizeof(subchunkHdr)) {
+			err = errPartialRead
 			return
 		}
-		if subchunk_hdr.subchunk_id == _DATA_SIGN {
+		if subchunkHdr.subchunkId == dataSign {
 			break
 		}
-		if _, err = fd.Seek(int64(subchunk_hdr.subchunk_size), os.SEEK_SET); err != nil {
+		if _, err = fd.Seek(int64(subchunkHdr.subchunkSize), os.SEEK_SET); err != nil {
 			return
 		}
 	}
-	subchunk_size = subchunk_hdr.subchunk_size
+	subchunkSize = subchunkHdr.subchunkSize
 	return
 }
 
-func (this *WaveHeader) Write(fd io.Writer, size uint32) (err error) {
-	var write_len int
+func (w *WaveHeader) Write(fd io.Writer, size uint32) (err error) {
+	var writeLen int
 	// Write WAVE header
-	if write_len, err = fd.Write(this.Bytes()); err != nil {
+	if writeLen, err = fd.Write(w.Bytes()); err != nil {
 		return
-	} else if write_len != int(unsafe.Sizeof(*this)) {
-		err = PARTIAL_WRITTEN_ERROR
+	} else if writeLen != int(unsafe.Sizeof(*w)) {
+		err = errPartialWritten
 		return
 	}
 	// Write Subchunk header
-	subchunk_hdr := WaveSubchunkHeader{_DATA_SIGN, size}
-	if write_len, err = fd.Write(subchunk_hdr.Bytes()); err != nil {
+	subchunkHdr := WaveSubchunkHeader{dataSign, size}
+	if writeLen, err = fd.Write(subchunkHdr.Bytes()); err != nil {
 		return
-	} else if write_len != int(unsafe.Sizeof(subchunk_hdr)) {
-		err = PARTIAL_WRITTEN_ERROR
+	} else if writeLen != int(unsafe.Sizeof(subchunkHdr)) {
+		err = errPartialWritten
 		return
 	}
 	return

@@ -7,72 +7,72 @@ import (
 )
 
 type Encoder struct {
-	codec      [MAX_NCH]tta_codec // 1 per channel
-	channels   int                // number of channels/codecs
-	data       [8]byte            // codec initialization data
-	fifo       tta_fifo
-	seek_table []uint64 // the playing position table
-	format     uint32   // tta data format
-	rate       uint32   // bitrate (kbps)
-	offset     uint64   // data start position (header size, bytes)
-	frames     uint32   // total count of frames
-	depth      uint32   // bytes per sample
-	flen_std   uint32   // default frame length in samples
-	flen_last  uint32   // last frame length in samples
-	flen       uint32   // current frame length in samples
-	fnum       uint32   // currently playing frame index
-	fpos       uint32   // the current position in frame
-	shift_bits uint32   // packing int to pcm
+	codec     [maxNCH]ttaCodec // 1 per channel
+	channels  int              // number of channels/codecs
+	data      [8]byte          // codec initialization data
+	fifo      ttaFifo
+	seekTable []uint64 // the playing position table
+	format    uint32   // tta data format
+	rate      uint32   // bitrate (kbps)
+	offset    uint64   // data start position (header size, bytes)
+	frames    uint32   // total count of frames
+	depth     uint32   // bytes per sample
+	flenStd   uint32   // default frame length in samples
+	flenLast  uint32   // last frame length in samples
+	flen      uint32   // current frame length in samples
+	fnum      uint32   // currently playing frame index
+	fpos      uint32   // the current position in frame
+	shiftBits uint32   // packing int to pcm
 }
 
 func Compress(infile, outfile io.ReadWriteSeeker, passwd string, cb Callback) (err error) {
-	wave_hdr := WaveHeader{}
-	var data_size uint32
-	if data_size, err = wave_hdr.Read(infile); err != nil {
-		err = READ_ERROR
+	waveHdr := WaveHeader{}
+	var dataSize uint32
+	if dataSize, err = waveHdr.Read(infile); err != nil {
+		err = errRead
 		return
-	} else if data_size >= 0x7FFFFFFF {
-		err = fmt.Errorf("incorrect data size info in wav file: %x", data_size)
+	} else if dataSize >= 0x7FFFFFFF {
+		err = fmt.Errorf("incorrect data size info in wav file: %x", dataSize)
 		return
 	}
-	if (wave_hdr.chunk_id != _RIFF_SIGN) ||
-		(wave_hdr.format != _WAVE_SIGN) ||
-		(wave_hdr.num_channels == 0) ||
-		(wave_hdr.num_channels > MAX_NCH) ||
-		(wave_hdr.bits_per_sample == 0) ||
-		(wave_hdr.bits_per_sample > MAX_BPS) {
-		err = FORMAT_ERROR
+	if (waveHdr.chunkId != riffSign) ||
+		(waveHdr.format != waveSign) ||
+		(waveHdr.numChannels == 0) ||
+		(waveHdr.numChannels > maxNCH) ||
+		(waveHdr.bitsPerSample == 0) ||
+		(waveHdr.bitsPerSample > maxBPS) {
+		err = errFormat
 		return
 	}
 	encoder := NewEncoder(outfile)
-	smp_size := uint32(wave_hdr.num_channels * ((wave_hdr.bits_per_sample + 7) / 8))
+	smpSize := uint32(waveHdr.numChannels * ((waveHdr.bitsPerSample + 7) / 8))
 	info := Info{
-		nch:     uint32(wave_hdr.num_channels),
-		bps:     uint32(wave_hdr.bits_per_sample),
-		sps:     wave_hdr.sample_rate,
-		format:  FORMAT_SIMPLE,
-		samples: data_size / smp_size,
+		nch:     uint32(waveHdr.numChannels),
+		bps:     uint32(waveHdr.bitsPerSample),
+		sps:     waveHdr.sampleRate,
+		format:  formatSimple,
+		samples: dataSize / smpSize,
 	}
 	if len(passwd) > 0 {
 		encoder.SetPassword(passwd)
-		info.format = FORMAT_ENCRYPTED
+		info.format = formatEncrypted
 	}
-	buf_size := PCM_BUFFER_LENGTH * smp_size
-	buffer := make([]byte, buf_size)
+	bufSize := pcmBufferLength * smpSize
+	buffer := make([]byte, bufSize)
 	if err = encoder.SetInfo(&info, 0); err != nil {
 		return
 	}
-	var read_len int = 0
-	for data_size > 0 {
-		if buf_size >= data_size {
-			buf_size = data_size
+	var readLen int
+	for dataSize > 0 {
+		if bufSize >= dataSize {
+			bufSize = dataSize
 		}
-		if read_len, err = infile.Read(buffer[:buf_size]); err != nil || read_len != int(buf_size) {
-			err = READ_ERROR
+		if readLen, err = infile.Read(buffer[:bufSize]); err != nil || readLen != int(bufSize) {
+			err = errRead
 			return
 		}
-		encoder.ProcessStream(buffer[:buf_size], cb)
-		data_size -= buf_size
+		encoder.ProcessStream(buffer[:bufSize], cb)
+		dataSize -= bufSize
 	}
 	encoder.Close()
 	return
@@ -84,29 +84,29 @@ func NewEncoder(iocb io.ReadWriteSeeker) *Encoder {
 	return &enc
 }
 
-func (this *Encoder) ProcessStream(in []byte, cb Callback) {
+func (e *Encoder) ProcessStream(in []byte, cb Callback) {
 	if len(in) == 0 {
 		return
 	}
 	var res, curr, next, tmp int32
-	next = read_buffer(in, this.depth)
-	in = in[this.depth:]
-	tmp = next << this.shift_bits
+	next = readBuffer(in, e.depth)
+	in = in[e.depth:]
+	tmp = next << e.shiftBits
 	i := 0
 	index := 0
 	for {
 		curr = next
 		if index < len(in) {
-			next = read_buffer(in[index:], this.depth)
-			tmp = next << this.shift_bits
+			next = readBuffer(in[index:], e.depth)
+			tmp = next << e.shiftBits
 		} else {
 			next = 0
 			tmp = 0
 		}
-		index += int(this.depth)
+		index += int(e.depth)
 		// transform data
-		if this.channels > 1 {
-			if i < this.channels-1 {
+		if e.channels > 1 {
+			if i < e.channels-1 {
 				res = next - curr
 				curr = res
 			} else {
@@ -115,57 +115,57 @@ func (this *Encoder) ProcessStream(in []byte, cb Callback) {
 		}
 		// compress stage 1: fixed order 1 prediction
 		tmp = curr
-		curr -= ((this.codec[i].prev * ((1 << 5) - 1)) >> 5)
-		this.codec[i].prev = tmp
+		curr -= ((e.codec[i].prev * ((1 << 5) - 1)) >> 5)
+		e.codec[i].prev = tmp
 		// compress stage 2: adaptive hybrid filter
-		this.codec[i].filter.Encode(&curr)
-		this.fifo.put_value(&this.codec[i].rice, curr)
-		if i < this.channels-1 {
+		e.codec[i].filter.Encode(&curr)
+		e.fifo.putValue(&e.codec[i].rice, curr)
+		if i < e.channels-1 {
 			i++
 		} else {
 			i = 0
-			this.fpos++
+			e.fpos++
 		}
-		if this.fpos == this.flen {
-			this.fifo.flush_bit_cache()
-			this.seek_table[this.fnum] = uint64(this.fifo.count)
-			this.fnum++
+		if e.fpos == e.flen {
+			e.fifo.flushBitCache()
+			e.seekTable[e.fnum] = uint64(e.fifo.count)
+			e.fnum++
 			// update dynamic info
-			this.rate = (this.fifo.count << 3) / 1070
+			e.rate = (e.fifo.count << 3) / 1070
 			if cb != nil {
-				cb(this.rate, this.fnum, this.frames)
+				cb(e.rate, e.fnum, e.frames)
 			}
-			this.frame_init(this.fnum)
+			e.frameInit(e.fnum)
 		}
-		if index >= int(this.depth)+len(in) {
+		if index >= int(e.depth)+len(in) {
 			break
 		}
 	}
 }
 
-func (this *Encoder) ProcessFrame(in []byte) {
+func (e *Encoder) ProcessFrame(in []byte) {
 	if len(in) == 0 {
 		return
 	}
 	var res, curr, next, tmp int32
-	next = read_buffer(in, this.depth)
-	in = in[this.depth:]
-	tmp = next << this.shift_bits
+	next = readBuffer(in, e.depth)
+	in = in[e.depth:]
+	tmp = next << e.shiftBits
 	i := 0
 	index := 0
 	for {
 		curr = next
 		if index < len(in) {
-			next = read_buffer(in[index:], this.depth)
-			tmp = next << this.shift_bits
+			next = readBuffer(in[index:], e.depth)
+			tmp = next << e.shiftBits
 		} else {
 			next = 0
 			tmp = 0
 		}
-		index += int(this.depth)
+		index += int(e.depth)
 		// transform data
-		if this.channels > 1 {
-			if i < this.channels-1 {
+		if e.channels > 1 {
+			if i < e.channels-1 {
 				res = next - curr
 				curr = res
 			} else {
@@ -174,113 +174,113 @@ func (this *Encoder) ProcessFrame(in []byte) {
 		}
 		// compress stage 1: fixed order 1 prediction
 		tmp = curr
-		curr -= ((this.codec[i].prev * ((1 << 5) - 1)) >> 5)
-		this.codec[i].prev = tmp
+		curr -= ((e.codec[i].prev * ((1 << 5) - 1)) >> 5)
+		e.codec[i].prev = tmp
 		// compress stage 2: adaptive hybrid filter
-		this.codec[i].filter.Encode(&curr)
-		this.fifo.put_value(&this.codec[i].rice, curr)
-		if i < this.channels-1 {
+		e.codec[i].filter.Encode(&curr)
+		e.fifo.putValue(&e.codec[i].rice, curr)
+		if i < e.channels-1 {
 			i++
 		} else {
 			i = 0
-			this.fpos++
+			e.fpos++
 		}
-		if this.fpos == this.flen {
-			this.fifo.flush_bit_cache()
+		if e.fpos == e.flen {
+			e.fifo.flushBitCache()
 			// update dynamic info
-			this.rate = (this.fifo.count << 3) / 1070
+			e.rate = (e.fifo.count << 3) / 1070
 			break
 		}
-		if index >= int(this.depth)+len(in) {
+		if index >= int(e.depth)+len(in) {
 			break
 		}
 	}
 }
 
-func (this *Encoder) write_seek_table() (err error) {
-	if this.seek_table == nil {
+func (e *Encoder) writeSeekTable() (err error) {
+	if e.seekTable == nil {
 		return
 	}
-	if _, err = this.fifo.io.Seek(int64(this.offset), os.SEEK_SET); err != nil {
+	if _, err = e.fifo.io.Seek(int64(e.offset), os.SEEK_SET); err != nil {
 		return
 	}
-	this.fifo.write_start()
-	this.fifo.reset()
-	for i := uint32(0); i < this.frames; i++ {
-		this.fifo.write_uint32(uint32(this.seek_table[i] & 0xFFFFFFFF))
+	e.fifo.writeStart()
+	e.fifo.reset()
+	for i := uint32(0); i < e.frames; i++ {
+		e.fifo.writeUint32(uint32(e.seekTable[i] & 0xFFFFFFFF))
 	}
-	this.fifo.write_crc32()
-	this.fifo.write_done()
+	e.fifo.writeCrc32()
+	e.fifo.writeDone()
 	return
 }
 
-func (this *Encoder) SetPassword(pass string) {
-	this.data = compute_key_digits(convert_password(pass))
+func (e *Encoder) SetPassword(pass string) {
+	e.data = computeKeyDigits(convertPassword(pass))
 }
 
-func (this *Encoder) frame_init(frame uint32) (err error) {
-	if frame >= this.frames {
+func (e *Encoder) frameInit(frame uint32) (err error) {
+	if frame >= e.frames {
 		return
 	}
-	shift := flt_set[this.depth-1]
-	this.fnum = frame
-	if this.fnum == this.frames-1 {
-		this.flen = this.flen_last
+	shift := fltSet[e.depth-1]
+	e.fnum = frame
+	if e.fnum == e.frames-1 {
+		e.flen = e.flenLast
 	} else {
-		this.flen = this.flen_std
+		e.flen = e.flenStd
 	}
 	// init entropy encoder
-	for i := 0; i < this.channels; i++ {
-		if SSE_Enabled {
-			this.codec[i].filter = NewSSEFilter(this.data, shift)
+	for i := 0; i < e.channels; i++ {
+		if sseEnabled {
+			e.codec[i].filter = NewSSEFilter(e.data, shift)
 		} else {
-			this.codec[i].filter = NewCompatibleFilter(this.data, shift)
+			e.codec[i].filter = NewCompatibleFilter(e.data, shift)
 		}
-		this.codec[i].rice.init(10, 10)
-		this.codec[i].prev = 0
+		e.codec[i].rice.init(10, 10)
+		e.codec[i].prev = 0
 	}
-	this.fpos = 0
-	this.fifo.reset()
+	e.fpos = 0
+	e.fifo.reset()
 	return
 }
 
-func (this *Encoder) frame_reset(frame uint32, iocb io.ReadWriteSeeker) {
-	this.fifo.io = iocb
-	this.fifo.read_start()
-	this.frame_init(frame)
+func (e *Encoder) frameReset(frame uint32, iocb io.ReadWriteSeeker) {
+	e.fifo.io = iocb
+	e.fifo.readStart()
+	e.frameInit(frame)
 }
 
-func (this *Encoder) WriteHeader(info *Info) (size uint32, err error) {
-	this.fifo.reset()
+func (e *Encoder) WriteHeader(info *Info) (size uint32, err error) {
+	e.fifo.reset()
 	// write TTA1 signature
-	if err = this.fifo.write_byte('T'); err != nil {
+	if err = e.fifo.writeByte('T'); err != nil {
 		return
 	}
-	if err = this.fifo.write_byte('T'); err != nil {
+	if err = e.fifo.writeByte('T'); err != nil {
 		return
 	}
-	if err = this.fifo.write_byte('A'); err != nil {
+	if err = e.fifo.writeByte('A'); err != nil {
 		return
 	}
-	if err = this.fifo.write_byte('1'); err != nil {
+	if err = e.fifo.writeByte('1'); err != nil {
 		return
 	}
-	if err = this.fifo.write_uint16(uint16(info.format)); err != nil {
+	if err = e.fifo.writeUint16(uint16(info.format)); err != nil {
 		return
 	}
-	if err = this.fifo.write_uint16(uint16(info.nch)); err != nil {
+	if err = e.fifo.writeUint16(uint16(info.nch)); err != nil {
 		return
 	}
-	if err = this.fifo.write_uint16(uint16(info.bps)); err != nil {
+	if err = e.fifo.writeUint16(uint16(info.bps)); err != nil {
 		return
 	}
-	if err = this.fifo.write_uint32(info.sps); err != nil {
+	if err = e.fifo.writeUint32(info.sps); err != nil {
 		return
 	}
-	if err = this.fifo.write_uint32(info.samples); err != nil {
+	if err = e.fifo.writeUint32(info.samples); err != nil {
 		return
 	}
-	if err = this.fifo.write_crc32(); err != nil {
+	if err = e.fifo.writeCrc32(); err != nil {
 		return
 	}
 	size = 22
@@ -288,50 +288,50 @@ func (this *Encoder) WriteHeader(info *Info) (size uint32, err error) {
 
 }
 
-func (this *Encoder) SetInfo(info *Info, pos int64) (err error) {
+func (e *Encoder) SetInfo(info *Info, pos int64) (err error) {
 	if info.format > 2 ||
-		info.bps < MIN_BPS ||
-		info.bps > MAX_BPS ||
-		info.nch > MAX_NCH {
-		return FORMAT_ERROR
+		info.bps < minBPS ||
+		info.bps > maxBPS ||
+		info.nch > maxNCH {
+		return errFormat
 	}
 	// set start position if required
 	if pos != 0 {
-		if _, err = this.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
-			err = SEEK_ERROR
+		if _, err = e.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
+			err = errSeek
 			return
 		}
 	}
-	this.fifo.write_start()
+	e.fifo.writeStart()
 	var p uint32
-	if p, err = this.WriteHeader(info); err != nil {
+	if p, err = e.WriteHeader(info); err != nil {
 		return
 	}
-	this.offset = uint64(pos) + uint64(p)
-	this.format = info.format
-	this.depth = (info.bps + 7) / 8
-	this.flen_std = (256 * (info.sps) / 245)
-	this.flen_last = info.samples % this.flen_std
-	this.frames = info.samples / this.flen_std
-	if this.flen_last != 0 {
-		this.frames += 1
+	e.offset = uint64(pos) + uint64(p)
+	e.format = info.format
+	e.depth = (info.bps + 7) / 8
+	e.flenStd = (256 * (info.sps) / 245)
+	e.flenLast = info.samples % e.flenStd
+	e.frames = info.samples / e.flenStd
+	if e.flenLast != 0 {
+		e.frames++
 	} else {
-		this.flen_last = this.flen_std
+		e.flenLast = e.flenStd
 	}
-	this.rate = 0
-	this.fifo.write_skip_bytes((this.frames + 1) * 4)
-	this.seek_table = make([]uint64, this.frames)
-	this.channels = int(info.nch)
-	this.shift_bits = (4 - this.depth) << 3
-	this.frame_init(0)
+	e.rate = 0
+	e.fifo.writeSkipBytes((e.frames + 1) * 4)
+	e.seekTable = make([]uint64, e.frames)
+	e.channels = int(info.nch)
+	e.shiftBits = (4 - e.depth) << 3
+	e.frameInit(0)
 	return
 }
 
-func (this *Encoder) Close() {
-	this.Finalize()
+func (e *Encoder) Close() {
+	e.Finalize()
 }
 
-func (this *Encoder) Finalize() {
-	this.fifo.write_done()
-	this.write_seek_table()
+func (e *Encoder) Finalize() {
+	e.fifo.writeDone()
+	e.writeSeekTable()
 }
