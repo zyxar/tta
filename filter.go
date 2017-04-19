@@ -17,7 +17,7 @@ type filterCompat struct {
 	dl    [24]int32
 }
 
-type filterSse filterCompat
+// type filterSse filterCompat
 
 func NewCompatibleFilter(data [8]byte, shift uint32) Filter {
 	t := filterCompat{}
@@ -135,25 +135,4 @@ func (t *filterCompat) Encode(in *int32) {
 
 	*in -= (sum >> uint32(t.shift))
 	t.error = *in
-}
-
-func NewSSEFilter(data [8]byte, shift uint32) Filter {
-	t := filterSse{}
-	t.shift = shift
-	t.round = 1 << uint32(shift-1)
-	t.qm[0] = int32(int8(data[0]))
-	t.qm[1] = int32(int8(data[1]))
-	t.qm[2] = int32(int8(data[2]))
-	t.qm[3] = int32(int8(data[3]))
-	t.qm[4] = int32(int8(data[4]))
-	t.qm[5] = int32(int8(data[5]))
-	t.qm[6] = int32(int8(data[6]))
-	t.qm[7] = int32(int8(data[7]))
-	return &t
-}
-
-func (t *filterSse) Decode(in *int32) {
-}
-
-func (t *filterSse) Encode(in *int32) {
 }

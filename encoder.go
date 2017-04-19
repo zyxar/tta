@@ -231,11 +231,7 @@ func (e *Encoder) frameInit(frame uint32) (err error) {
 	}
 	// init entropy encoder
 	for i := 0; i < e.channels; i++ {
-		if sseEnabled {
-			e.codecs[i].filter = NewSSEFilter(e.data, shift)
-		} else {
-			e.codecs[i].filter = NewCompatibleFilter(e.data, shift)
-		}
+		e.codecs[i].filter = NewCompatibleFilter(e.data, shift)
 		e.codecs[i].adapter.init(10, 10)
 		e.codecs[i].prev = 0
 	}

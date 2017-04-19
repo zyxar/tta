@@ -236,11 +236,7 @@ func (d *Decoder) frameInit(frame uint32, seekNeeded bool) (err error) {
 		d.flen = d.flenStd
 	}
 	for i := 0; i < d.channels; i++ {
-		if sseEnabled {
-			d.codecs[i].filter = NewSSEFilter(d.data, shift)
-		} else {
-			d.codecs[i].filter = NewCompatibleFilter(d.data, shift)
-		}
+		d.codecs[i].filter = NewCompatibleFilter(d.data, shift)
 		d.codecs[i].adapter.init(10, 10)
 		d.codecs[i].prev = 0
 	}
