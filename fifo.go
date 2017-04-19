@@ -222,7 +222,6 @@ func (s *fifo) putValue(ad *adapter, value int32) {
 	} else {
 		outval = uint32(-value) << 1
 	}
-	// encode Rice unsigned
 	k = ad.k0
 	ad.sum0 += outval - (ad.sum0 >> 4)
 	if ad.k0 > 0 && ad.sum0 < shift16[ad.k0] {
