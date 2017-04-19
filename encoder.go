@@ -7,10 +7,10 @@ import (
 )
 
 type Encoder struct {
-	codec     [maxNCH]ttaCodec // 1 per channel
-	channels  int              // number of channels/codecs
-	data      [8]byte          // codec initialization data
-	fifo      ttaFifo
+	codecs    [maxNCH]codec // 1 per channel
+	channels  int           // number of channels/codecs
+	data      [8]byte       // codec initialization data
+	fifo      fifo
 	seekTable []uint64 // the playing position table
 	format    uint32   // tta data format
 	rate      uint32   // bitrate (kbps)
@@ -115,11 +115,11 @@ func (e *Encoder) ProcessStream(in []byte, cb Callback) {
 		}
 		// compress stage 1: fixed order 1 prediction
 		tmp = curr
-		curr -= ((e.codec[i].prev * ((1 << 5) - 1)) >> 5)
-		e.codec[i].prev = tmp
+		curr -= ((e.codecs[i].prev * ((1 << 5) - 1)) >> 5)
+		e.codecs[i].prev = tmp
 		// compress stage 2: adaptive hybrid filter
-		e.codec[i].filter.Encode(&curr)
-		e.fifo.putValue(&e.codec[i].rice, curr)
+		e.codecs[i].filter.Encode(&curr)
+		e.fifo.putValue(&e.codecs[i].adapter, curr)
 		if i < e.channels-1 {
 			i++
 		} else {
@@ -174,11 +174,11 @@ func (e *Encoder) ProcessFrame(in []byte) {
 		}
 		// compress stage 1: fixed order 1 prediction
 		tmp = curr
-		curr -= ((e.codec[i].prev * ((1 << 5) - 1)) >> 5)
-		e.codec[i].prev = tmp
+		curr -= ((e.codecs[i].prev * ((1 << 5) - 1)) >> 5)
+		e.codecs[i].prev = tmp
 		// compress stage 2: adaptive hybrid filter
-		e.codec[i].filter.Encode(&curr)
-		e.fifo.putValue(&e.codec[i].rice, curr)
+		e.codecs[i].filter.Encode(&curr)
+		e.fifo.putValue(&e.codecs[i].adapter, curr)
 		if i < e.channels-1 {
 			i++
 		} else {
@@ -222,7 +222,7 @@ func (e *Encoder) frameInit(frame uint32) (err error) {
 	if frame >= e.frames {
 		return
 	}
-	shift := fltSet[e.depth-1]
+	shift := shifts[e.depth-1]
 	e.fnum = frame
 	if e.fnum == e.frames-1 {
 		e.flen = e.flenLast
@@ -232,12 +232,12 @@ func (e *Encoder) frameInit(frame uint32) (err error) {
 	// init entropy encoder
 	for i := 0; i < e.channels; i++ {
 		if sseEnabled {
-			e.codec[i].filter = NewSSEFilter(e.data, shift)
+			e.codecs[i].filter = NewSSEFilter(e.data, shift)
 		} else {
-			e.codec[i].filter = NewCompatibleFilter(e.data, shift)
+			e.codecs[i].filter = NewCompatibleFilter(e.data, shift)
 		}
-		e.codec[i].rice.init(10, 10)
-		e.codec[i].prev = 0
+		e.codecs[i].adapter.init(10, 10)
+		e.codecs[i].prev = 0
 	}
 	e.fpos = 0
 	e.fifo.reset()

@@ -6,10 +6,10 @@ import (
 )
 
 type Decoder struct {
-	codec       [maxNCH]ttaCodec // 1 per channel
-	channels    int              // number of channels/codecs
-	data        [8]byte          // codec initialization data
-	fifo        ttaFifo
+	codecs      [maxNCH]codec // 1 per channel
+	channels    int           // number of channels/codecs
+	data        [8]byte       // codec initialization data
+	fifo        fifo
 	passwordSet bool     // password protection flag
 	seekAllowed bool     // seek table flag
 	seekTable   []uint64 // the playing position table
@@ -83,12 +83,12 @@ func (d *Decoder) ProcessStream(out []byte, cb Callback) int32 {
 	i := 0
 	outClone := out[:]
 	for d.fpos < d.flen && len(outClone) > 0 {
-		value = d.fifo.getValue(&d.codec[i].rice)
+		value = d.fifo.getValue(&d.codecs[i].adapter)
 		// decompress stage 1: adaptive hybrid filter
-		d.codec[i].filter.Decode(&value)
+		d.codecs[i].filter.Decode(&value)
 		// decompress stage 2: fixed order 1 prediction
-		value += ((d.codec[i].prev * ((1 << 5) - 1)) >> 5)
-		d.codec[i].prev = value
+		value += ((d.codecs[i].prev * ((1 << 5) - 1)) >> 5)
+		d.codecs[i].prev = value
 		cache[i] = value
 		if i < d.channels-1 {
 			i++
@@ -148,12 +148,12 @@ func (d *Decoder) ProcessFrame(inSize uint32, out []byte) int32 {
 	var ret int32
 	outClone := out[:]
 	for d.fifo.count < inSize && len(outClone) > 0 {
-		value = d.fifo.getValue(&d.codec[i].rice)
+		value = d.fifo.getValue(&d.codecs[i].adapter)
 		// decompress stage 1: adaptive hybrid filter
-		d.codec[i].filter.Decode(&value)
+		d.codecs[i].filter.Decode(&value)
 		// decompress stage 2: fixed order 1 prediction
-		value += ((d.codec[i].prev * ((1 << 5) - 1)) >> 5)
-		d.codec[i].prev = value
+		value += ((d.codecs[i].prev * ((1 << 5) - 1)) >> 5)
+		d.codecs[i].prev = value
 		cache[i] = value
 		if i < d.channels-1 {
 			i++
@@ -219,7 +219,7 @@ func (d *Decoder) frameInit(frame uint32, seekNeeded bool) (err error) {
 	if frame >= d.frames {
 		return
 	}
-	shift := fltSet[d.depth-1]
+	shift := shifts[d.depth-1]
 	d.fnum = frame
 	if seekNeeded && d.seekAllowed {
 		pos := d.seekTable[d.fnum]
@@ -237,12 +237,12 @@ func (d *Decoder) frameInit(frame uint32, seekNeeded bool) (err error) {
 	}
 	for i := 0; i < d.channels; i++ {
 		if sseEnabled {
-			d.codec[i].filter = NewSSEFilter(d.data, shift)
+			d.codecs[i].filter = NewSSEFilter(d.data, shift)
 		} else {
-			d.codec[i].filter = NewCompatibleFilter(d.data, shift)
+			d.codecs[i].filter = NewCompatibleFilter(d.data, shift)
 		}
-		d.codec[i].rice.init(10, 10)
-		d.codec[i].prev = 0
+		d.codecs[i].adapter.init(10, 10)
+		d.codecs[i].prev = 0
 	}
 	d.fpos = 0
 	d.fifo.reset()

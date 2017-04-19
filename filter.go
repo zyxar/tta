@@ -2,8 +2,25 @@ package tta
 
 // TODO: SSE4 optimization
 
-func NewCompatibleFilter(data [8]byte, shift int32) Filter {
-	t := ttaFilterCompat{}
+type Filter interface {
+	Decode(*int32)
+	Encode(*int32)
+}
+
+type filterCompat struct {
+	index int32
+	error int32
+	round int32
+	shift uint32
+	qm    [8]int32
+	dx    [24]int32
+	dl    [24]int32
+}
+
+type filterSse filterCompat
+
+func NewCompatibleFilter(data [8]byte, shift uint32) Filter {
+	t := filterCompat{}
 	t.shift = shift
 	t.round = 1 << uint32(shift-1)
 	t.qm[0] = int32(int8(data[0]))
@@ -17,7 +34,7 @@ func NewCompatibleFilter(data [8]byte, shift int32) Filter {
 	return &t
 }
 
-func (t *ttaFilterCompat) Decode(in *int32) {
+func (t *filterCompat) Decode(in *int32) {
 	pa := t.dl[:]
 	pb := t.qm[:]
 	pm := t.dx[:]
@@ -67,7 +84,7 @@ func (t *ttaFilterCompat) Decode(in *int32) {
 	pa[4] += pa[5]
 }
 
-func (t *ttaFilterCompat) Encode(in *int32) {
+func (t *filterCompat) Encode(in *int32) {
 	pa := t.dl[:]
 	pb := t.qm[:]
 	pm := t.dx[:]
@@ -120,8 +137,8 @@ func (t *ttaFilterCompat) Encode(in *int32) {
 	t.error = *in
 }
 
-func NewSSEFilter(data [8]byte, shift int32) Filter {
-	t := ttaFilterSse{}
+func NewSSEFilter(data [8]byte, shift uint32) Filter {
+	t := filterSse{}
 	t.shift = shift
 	t.round = 1 << uint32(shift-1)
 	t.qm[0] = int32(int8(data[0]))
@@ -135,8 +152,8 @@ func NewSSEFilter(data [8]byte, shift int32) Filter {
 	return &t
 }
 
-func (t *ttaFilterSse) Decode(in *int32) {
+func (t *filterSse) Decode(in *int32) {
 }
 
-func (t *ttaFilterSse) Encode(in *int32) {
+func (t *filterSse) Encode(in *int32) {
 }

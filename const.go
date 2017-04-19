@@ -208,4 +208,4 @@ var crc64TableHigh = [256]uint32{
 	0x5dedc41a, 0x1f1d25f1, 0xd80c07cd, 0x9afce626,
 }
 
-var fltSet = [3]int32{10, 9, 10}
+var shifts = [3]uint32{10, 9, 10}
