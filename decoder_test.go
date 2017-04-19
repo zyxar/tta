@@ -6,6 +6,7 @@ import (
 )
 
 func TestDecompress(t *testing.T) {
+	t.Parallel()
 	infile, err := os.Open("./data/sample.tta")
 	if err != nil {
 		t.Fatal(err)

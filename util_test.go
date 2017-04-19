@@ -6,6 +6,7 @@ import (
 )
 
 func TestComputeKeyDigits(t *testing.T) {
+	t.Parallel()
 	var strs = [...]string{"whatisthis?", "1", "", "12", "089q3eoib*(*U(*#$", "~*)(*)@&("}
 	var digits = [...][8]byte{
 		{37, 121, 62, 136, 117, 151, 236, 181},
@@ -24,6 +25,7 @@ func TestComputeKeyDigits(t *testing.T) {
 }
 
 func TestConvertPassword(t *testing.T) {
+	t.Parallel()
 	var strs = [...]string{
 		"",
 		"1",

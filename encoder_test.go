@@ -6,6 +6,7 @@ import (
 )
 
 func TestCompress(t *testing.T) {
+	t.Parallel()
 	infile, err := os.Open("./data/sample.wav")
 	if err != nil {
 		t.Fatal(err)

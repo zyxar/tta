@@ -9,6 +9,7 @@ import (
 )
 
 func TestComprehensive(t *testing.T) {
+	t.Parallel()
 	testfile := "tta_comprehensive_test.wav"
 	if info, err := os.Stat(testfile); err == nil {
 		if !info.IsDir() {

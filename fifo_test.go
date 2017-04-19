@@ -5,6 +5,7 @@ import (
 )
 
 func TestReadByte(t *testing.T) {
+	t.Parallel()
 	fifo := ttaFifo{}
 	for i := 0; i < fifoBufferSize; i++ {
 		fifo.buffer[i] = byte(i)
@@ -31,6 +32,7 @@ func TestReadByte(t *testing.T) {
 }
 
 func TestReadUint16(t *testing.T) {
+	t.Parallel()
 	fifo := ttaFifo{}
 	for i := 0; i < fifoBufferSize; i++ {
 		fifo.buffer[i] = byte(i)
@@ -59,6 +61,7 @@ func TestReadUint16(t *testing.T) {
 }
 
 func TestReadUint32(t *testing.T) {
+	t.Parallel()
 	fifo := ttaFifo{}
 	for i := 0; i < fifoBufferSize; i++ {
 		fifo.buffer[i] = byte(i)
@@ -87,6 +90,7 @@ func TestReadUint32(t *testing.T) {
 }
 
 func TestWriteByte(t *testing.T) {
+	t.Parallel()
 	fifo := ttaFifo{}
 	fifo.pos = 0
 	fifo.end = fifoBufferSize
