@@ -3,6 +3,8 @@ package tta
 import (
 	"io"
 	"os"
+
+	"github.com/zyxar/tta/wave"
 )
 
 type Decoder struct {
@@ -36,19 +38,7 @@ func Decompress(infile io.ReadWriteSeeker, outfile io.WriteSeeker, passwd string
 	}
 	smpSize := info.nch * ((info.bps + 7) / 8)
 	dataSize := info.samples * smpSize
-	waveHdr := WaveHeader{
-		chunkId:       riffSign,
-		chunkSize:     dataSize + 36,
-		format:        waveSign,
-		subchunkId:    fmtSign,
-		subchunkSize:  16,
-		audioFormat:   1,
-		numChannels:   uint16(info.nch),
-		sampleRate:    info.sps,
-		bitsPerSample: uint16(info.bps),
-		byteRate:      info.sps * smpSize,
-		blockAlign:    uint16(smpSize),
-	}
+	waveHdr := wave.NewHeader(dataSize, info.nch, info.sps, info.bps, smpSize)
 	if err = waveHdr.Write(outfile, dataSize); err != nil {
 		return
 	}

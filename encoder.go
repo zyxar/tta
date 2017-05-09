@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/zyxar/tta/wave"
 )
 
 type Encoder struct {
@@ -26,7 +28,7 @@ type Encoder struct {
 }
 
 func Compress(infile io.ReadSeeker, outfile io.ReadWriteSeeker, passwd string, cb Callback) (err error) {
-	waveHdr := WaveHeader{}
+	waveHdr := wave.Header{}
 	var dataSize uint32
 	if dataSize, err = waveHdr.Read(infile); err != nil {
 		err = errRead
@@ -35,21 +37,16 @@ func Compress(infile io.ReadSeeker, outfile io.ReadWriteSeeker, passwd string, c
 		err = fmt.Errorf("incorrect data size info in wav file: %x", dataSize)
 		return
 	}
-	if (waveHdr.chunkId != riffSign) ||
-		(waveHdr.format != waveSign) ||
-		(waveHdr.numChannels == 0) ||
-		(waveHdr.numChannels > maxNCH) ||
-		(waveHdr.bitsPerSample == 0) ||
-		(waveHdr.bitsPerSample > maxBPS) {
+	if !waveHdr.Validate(maxNCH, maxBPS) {
 		err = errFormat
 		return
 	}
 	encoder := NewEncoder(outfile)
-	smpSize := uint32(waveHdr.numChannels * ((waveHdr.bitsPerSample + 7) / 8))
+	smpSize := uint32(waveHdr.NumChannels * ((waveHdr.BitsPerSample + 7) / 8))
 	info := Info{
-		nch:     uint32(waveHdr.numChannels),
-		bps:     uint32(waveHdr.bitsPerSample),
-		sps:     waveHdr.sampleRate,
+		nch:     uint32(waveHdr.NumChannels),
+		bps:     uint32(waveHdr.BitsPerSample),
+		sps:     waveHdr.SampleRate,
 		format:  formatSimple,
 		samples: dataSize / smpSize,
 	}

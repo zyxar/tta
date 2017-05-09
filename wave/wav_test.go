@@ -1,4 +1,4 @@
-package tta
+package wave
 
 import (
 	"bytes"
@@ -13,17 +13,17 @@ var wavSize = uint32(0x0374)
 
 func TestReadHeader(t *testing.T) {
 	t.Parallel()
-	file, err := os.Open("./data/sample.wav")
+	file, err := os.Open("../data/sample.wav")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer file.Close()
-	wav := WaveHeader{}
+	wav := Header{}
 	if size, err := wav.Read(file); err != nil {
 		t.Error(err)
 	} else {
 		if bytes.Compare(wavSlice, wav.Bytes()) != 0 || size != wavSize {
-			t.Error("WaveHeader::Read fail")
+			t.Error("Header::Read fail")
 		}
 	}
 }
@@ -37,7 +37,7 @@ func TestWriteHeader(t *testing.T) {
 	}
 	defer file.Close()
 	defer os.Remove(filename)
-	wav := WaveHeader{}
+	wav := Header{}
 	copy(wav.Bytes(), wavSlice)
 	if err = wav.Write(file, wavSize); err != nil {
 		t.Error(err)

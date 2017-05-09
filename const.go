@@ -32,7 +32,6 @@ var (
 	errNotSupported = errors.New("unsupported architecture")
 	// Partial io
 	errPartialWritten = errors.New("partial written")
-	errPartialRead    = errors.New("partial read")
 )
 
 const ( // CPU_ARCH_TYPE
