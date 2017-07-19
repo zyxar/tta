@@ -1,6 +1,6 @@
 language: go
 go:
-- 1.6
+- 1.8.3
 - tip
 script: go test -v
 notifications:
