@@ -17,7 +17,7 @@ const (
 	formatEncrypted = 2
 
 	// Version of TTA lib
-	Version = "0.0.2"
+	Version = "0.1.0"
 )
 
 var (

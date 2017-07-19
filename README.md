@@ -24,4 +24,4 @@
 ## TODOs
 
 - [ ] general optimization
-- [ ] SSE4 acceleration
+- [x] SSE4 acceleration

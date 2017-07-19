@@ -4,10 +4,18 @@ import (
 	"github.com/klauspost/cpuid"
 )
 
-var sseEnabled bool
+const (
+	cpuArchUNKNOWN = iota
+	cpuArchSSE2
+	cpuArchSSE4
+)
+
+var CPUArch = cpuArchUNKNOWN
 
 func init() {
 	if cpuid.CPU.SSE4() {
-		// sseEnabled = true // use this if SSE optimization is done
+		CPUArch = cpuArchSSE4
+	} else if cpuid.CPU.SSE2() {
+		CPUArch = cpuArchSSE2
 	}
 }

@@ -1,6 +1,8 @@
 package filter
 
-// TODO: SSE4 optimization
+import (
+	"unsafe"
+)
 
 type Filter interface {
 	Decode(*int32)
@@ -31,8 +33,17 @@ func New(data [8]byte, shift uint32) Filter {
 	t.qm[5] = int32(int8(data[5]))
 	t.qm[6] = int32(int8(data[6]))
 	t.qm[7] = int32(int8(data[7]))
-	t.decode = t.DecodeCompat
-	t.encode = t.EncodeCompat
+	switch CPUArch {
+	case cpuArchSSE4:
+		t.decode = t.DecodeSSE4
+		t.encode = t.EncodeSSE4
+	case cpuArchSSE2:
+		t.decode = t.DecodeSSE2
+		t.encode = t.EncodeSSE2
+	default:
+		t.decode = t.DecodeCompat
+		t.encode = t.EncodeCompat
+	}
 	return &t
 }
 
@@ -42,6 +53,22 @@ func (f *flt) Decode(in *int32) {
 
 func (f *flt) Encode(in *int32) {
 	f.encode(in)
+}
+
+func (f *flt) DecodeSSE4(in *int32) {
+	__hybrid_filter_dec_sse4(unsafe.Pointer(in), unsafe.Pointer(&f.error), unsafe.Pointer(&f.qm[0]), unsafe.Pointer(&f.dx[0]), unsafe.Pointer(&f.dl[0]), f.round, f.shift)
+}
+
+func (f *flt) EncodeSSE4(in *int32) {
+	__hybrid_filter_enc_sse4(unsafe.Pointer(in), unsafe.Pointer(&f.error), unsafe.Pointer(&f.qm[0]), unsafe.Pointer(&f.dx[0]), unsafe.Pointer(&f.dl[0]), f.round, f.shift)
+}
+
+func (f *flt) DecodeSSE2(in *int32) {
+	__hybrid_filter_dec_sse2(unsafe.Pointer(in), unsafe.Pointer(&f.error), unsafe.Pointer(&f.qm[0]), unsafe.Pointer(&f.dx[0]), unsafe.Pointer(&f.dl[0]), f.round, f.shift)
+}
+
+func (f *flt) EncodeSSE2(in *int32) {
+	__hybrid_filter_enc_sse2(unsafe.Pointer(in), unsafe.Pointer(&f.error), unsafe.Pointer(&f.qm[0]), unsafe.Pointer(&f.dx[0]), unsafe.Pointer(&f.dl[0]), f.round, f.shift)
 }
 
 func (t *flt) DecodeCompat(in *int32) {
