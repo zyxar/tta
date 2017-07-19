@@ -17,11 +17,7 @@
     -passwd="": specify password
   ```
 
-## Comparison
-
-![](https://github.com/zyxar/tta/blob/master/data/tta_comp.svg)
-
 ## TODOs
 
-- [ ] general optimization
 - [x] SSE4 acceleration
+- [ ] general optimization
