@@ -4,13 +4,6 @@ import (
 	"encoding/binary"
 )
 
-func BinaryVersion() byte {
-	if sseEnabled {
-		return cpuArchIx86Sse4_1
-	}
-	return cpuArchUndefined
-}
-
 func computeKeyDigits(p []byte) [8]byte {
 	var crcLow, crcHigh uint32 = 0xFFFFFFFF, 0xFFFFFFFF
 	for i := 0; i < len(p); i++ {

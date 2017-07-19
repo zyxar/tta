@@ -1,5 +1,9 @@
 package tta
 
+import (
+	"github.com/zyxar/tta/filter"
+)
+
 type Info struct {
 	format  uint32 // audio format
 	nch     uint32 // number of channels
@@ -23,7 +27,7 @@ func (a *adapter) init(k0, k1 uint32) {
 }
 
 type codec struct {
-	filter  Filter
+	filter  filter.Filter
 	adapter adapter
 	prev    int32
 }

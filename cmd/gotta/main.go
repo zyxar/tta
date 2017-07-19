@@ -23,7 +23,7 @@ func init() {
 }
 
 func main() {
-	fmt.Fprintf(os.Stderr, "\r\nTTA1 lossless audio encoder/decoder, version %s{%d}\n\n", tta.Version, tta.BinaryVersion())
+	fmt.Fprintf(os.Stderr, "\r\nTTA1 lossless audio encoder/decoder, version %s\n\n", tta.Version)
 	flag.Parse()
 	if help || flag.NArg() < 1 || (!decode && !encode) {
 		fmt.Fprintf(os.Stderr, "\rUsage of gotta: [encode|decode] [passwd PASSWORD] INPUT_FILE OUTPUT_FILE\n\n")

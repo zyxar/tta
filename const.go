@@ -17,7 +17,7 @@ const (
 	formatEncrypted = 2
 
 	// Version of TTA lib
-	Version = "0.0.1"
+	Version = "0.0.2"
 )
 
 var (
@@ -32,14 +32,6 @@ var (
 	errNotSupported = errors.New("unsupported architecture")
 	// Partial io
 	errPartialWritten = errors.New("partial written")
-)
-
-const ( // CPU_ARCH_TYPE
-	cpuArchUndefined = iota
-	cpuArchIx86Sse2
-	cpuArchIx86Sse3
-	cpuArchIx86Sse4_1
-	cpuArchIx86Sse4_2
 )
 
 var bitMask = []uint32{

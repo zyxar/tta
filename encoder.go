@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/zyxar/tta/filter"
 	"github.com/zyxar/tta/wave"
 )
 
@@ -228,7 +229,7 @@ func (e *Encoder) frameInit(frame uint32) (err error) {
 	}
 	// init entropy encoder
 	for i := 0; i < e.channels; i++ {
-		e.codecs[i].filter = NewCompatibleFilter(e.data, shift)
+		e.codecs[i].filter = filter.New(e.data, shift)
 		e.codecs[i].adapter.init(10, 10)
 		e.codecs[i].prev = 0
 	}

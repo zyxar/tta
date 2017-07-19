@@ -1,4 +1,4 @@
-package tta
+package filter
 
 import (
 	"github.com/klauspost/cpuid"

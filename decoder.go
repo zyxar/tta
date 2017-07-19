@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/zyxar/tta/filter"
 	"github.com/zyxar/tta/wave"
 )
 
@@ -226,7 +227,7 @@ func (d *Decoder) frameInit(frame uint32, seekNeeded bool) (err error) {
 		d.flen = d.flenStd
 	}
 	for i := 0; i < d.channels; i++ {
-		d.codecs[i].filter = NewCompatibleFilter(d.data, shift)
+		d.codecs[i].filter = filter.New(d.data, shift)
 		d.codecs[i].adapter.init(10, 10)
 		d.codecs[i].prev = 0
 	}

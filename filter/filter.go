@@ -1,4 +1,4 @@
-package tta
+package filter
 
 // TODO: SSE4 optimization
 
@@ -7,20 +7,20 @@ type Filter interface {
 	Encode(*int32)
 }
 
-type filterCompat struct {
-	index int32
-	error int32
-	round int32
-	shift uint32
-	qm    [8]int32
-	dx    [24]int32
-	dl    [24]int32
+type flt struct {
+	index  int32
+	error  int32
+	round  int32
+	shift  uint32
+	qm     [8]int32
+	dx     [24]int32
+	dl     [24]int32
+	decode func(*int32)
+	encode func(*int32)
 }
 
-// type filterSse filterCompat
-
-func NewCompatibleFilter(data [8]byte, shift uint32) Filter {
-	t := filterCompat{}
+func New(data [8]byte, shift uint32) Filter {
+	t := flt{}
 	t.shift = shift
 	t.round = 1 << uint32(shift-1)
 	t.qm[0] = int32(int8(data[0]))
@@ -31,10 +31,20 @@ func NewCompatibleFilter(data [8]byte, shift uint32) Filter {
 	t.qm[5] = int32(int8(data[5]))
 	t.qm[6] = int32(int8(data[6]))
 	t.qm[7] = int32(int8(data[7]))
+	t.decode = t.DecodeCompat
+	t.encode = t.EncodeCompat
 	return &t
 }
 
-func (t *filterCompat) Decode(in *int32) {
+func (f *flt) Decode(in *int32) {
+	f.decode(in)
+}
+
+func (f *flt) Encode(in *int32) {
+	f.encode(in)
+}
+
+func (t *flt) DecodeCompat(in *int32) {
 	pa := t.dl[:]
 	pb := t.qm[:]
 	pm := t.dx[:]
@@ -84,7 +94,7 @@ func (t *filterCompat) Decode(in *int32) {
 	pa[4] += pa[5]
 }
 
-func (t *filterCompat) Encode(in *int32) {
+func (t *flt) EncodeCompat(in *int32) {
 	pa := t.dl[:]
 	pb := t.qm[:]
 	pm := t.dx[:]
