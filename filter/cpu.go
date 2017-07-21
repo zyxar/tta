@@ -6,13 +6,13 @@ import (
 
 func init() {
 	if cpuid.CPU.SSE4() {
-		encode = _HybridFilterEncodeSSE4
-		decode = _HybridFilterDecodeSSE4
+		encode = EncodeSSE4
+		decode = DecodeSSE4
 	} else if cpuid.CPU.SSE2() {
-		encode = _HybridFilterEncodeSSE2
-		decode = _HybridFilterDecodeSSE2
+		encode = EncodeSSE2
+		decode = DecodeSSE2
 	} else {
-		encode = _HybridFilterEncodeCompat
-		decode = _HybridFilterDecodeCompat
+		encode = EncodeCompat
+		decode = DecodeCompat
 	}
 }

@@ -1,9 +1,5 @@
 package filter
 
-import (
-	"unsafe"
-)
-
 // Filter exposes Decode and Encode methods for data manipulation
 type Filter struct {
 	index int32
@@ -15,7 +11,7 @@ type Filter struct {
 	dl    [24]int32
 }
 
-type codec func(fs, in unsafe.Pointer)
+type codec func(fs *Filter, in *int32)
 
 var (
 	decode codec
@@ -39,9 +35,9 @@ func New(data [8]byte, shift uint32) *Filter {
 }
 
 func (f *Filter) Decode(in *int32) {
-	decode(unsafe.Pointer(f), unsafe.Pointer(in))
+	decode(f, in)
 }
 
 func (f *Filter) Encode(in *int32) {
-	encode(unsafe.Pointer(f), unsafe.Pointer(in))
+	encode(f, in)
 }

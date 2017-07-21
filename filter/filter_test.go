@@ -2,7 +2,6 @@ package filter
 
 import (
 	"testing"
-	"unsafe"
 )
 
 func BenchmarkEncodeSSE4(b *testing.B) {
@@ -10,7 +9,7 @@ func BenchmarkEncodeSSE4(b *testing.B) {
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_HybridFilterEncodeSSE4(unsafe.Pointer(f), unsafe.Pointer(&in))
+			EncodeSSE4(f, &in)
 		}
 	})
 }
@@ -20,7 +19,7 @@ func BenchmarkEncodeSSE2(b *testing.B) {
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_HybridFilterEncodeSSE2(unsafe.Pointer(f), unsafe.Pointer(&in))
+			EncodeSSE2(f, &in)
 		}
 	})
 }
@@ -30,7 +29,7 @@ func BenchmarkEncodeCompat(b *testing.B) {
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_HybridFilterEncodeCompat(unsafe.Pointer(f), unsafe.Pointer(&in))
+			EncodeCompat(f, &in)
 		}
 	})
 }
@@ -40,7 +39,7 @@ func BenchmarkDecodeSSE4(b *testing.B) {
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_HybridFilterDecodeSSE4(unsafe.Pointer(f), unsafe.Pointer(&in))
+			DecodeSSE4(f, &in)
 		}
 	})
 }
@@ -50,7 +49,7 @@ func BenchmarkDecodeSSE2(b *testing.B) {
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_HybridFilterDecodeSSE2(unsafe.Pointer(f), unsafe.Pointer(&in))
+			DecodeSSE2(f, &in)
 		}
 	})
 }
@@ -60,7 +59,7 @@ func BenchmarkDecodeCompat(b *testing.B) {
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_HybridFilterDecodeCompat(unsafe.Pointer(f), unsafe.Pointer(&in))
+			DecodeCompat(f, &in)
 		}
 	})
 }
