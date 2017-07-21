@@ -253,30 +253,6 @@ func (d *Decoder) setPosition(seconds uint32) (newPos uint32, err error) {
 	return
 }
 
-func (d *Decoder) SetInfo(info *Info) error {
-	if info.format > 2 ||
-		info.bps < minBPS ||
-		info.bps > maxBPS ||
-		info.nch > maxNCH {
-		return errFormat
-	}
-	d.format = info.format
-	d.depth = (info.bps + 7) / 8
-	d.flenStd = (256 * (info.sps) / 245)
-	d.flenLast = info.samples % d.flenStd
-	d.frames = info.samples / d.flenStd
-	if d.flenLast != 0 {
-		d.frames++
-	} else {
-		d.flenLast = d.flenStd
-	}
-	d.rate = 0
-	d.channels = int(info.nch)
-	d.fifo.readStart()
-	d.frameInit(0, false)
-	return nil
-}
-
 func (d *Decoder) ReadHeader(info *Info) (uint32, error) {
 	size := d.fifo.skipId3v2()
 	d.fifo.reset()

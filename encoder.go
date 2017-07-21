@@ -57,7 +57,7 @@ func Compress(infile io.ReadSeeker, outfile io.ReadWriteSeeker, passwd string, c
 	}
 	bufSize := pcmBufferLength * smpSize
 	buffer := make([]byte, bufSize)
-	if err = encoder.SetInfo(&info, 0); err != nil {
+	if err = encoder.SetInfo(&info); err != nil {
 		return
 	}
 	var readLen int
@@ -202,7 +202,7 @@ func (e *Encoder) writeSeekTable() (err error) {
 	if _, err = e.fifo.io.Seek(int64(e.offset), os.SEEK_SET); err != nil {
 		return
 	}
-	e.fifo.writeStart()
+	e.fifo.pos = 0
 	e.fifo.reset()
 	for i := uint32(0); i < e.frames; i++ {
 		e.fifo.writeUint32(uint32(e.seekTable[i] & 0xFFFFFFFF))
@@ -282,26 +282,18 @@ func (e *Encoder) WriteHeader(info *Info) (size uint32, err error) {
 
 }
 
-func (e *Encoder) SetInfo(info *Info, pos int64) (err error) {
+func (e *Encoder) SetInfo(info *Info) (err error) {
 	if info.format > 2 ||
 		info.bps < minBPS ||
 		info.bps > maxBPS ||
 		info.nch > maxNCH {
 		return errFormat
 	}
-	// set start position if required
-	if pos != 0 {
-		if _, err = e.fifo.io.Seek(int64(pos), os.SEEK_SET); err != nil {
-			err = errSeek
-			return
-		}
-	}
-	e.fifo.writeStart()
 	var p uint32
 	if p, err = e.WriteHeader(info); err != nil {
 		return
 	}
-	e.offset = uint64(pos) + uint64(p)
+	e.offset = uint64(p)
 	e.format = info.format
 	e.depth = (info.bps + 7) / 8
 	e.flenStd = (256 * (info.sps) / 245)

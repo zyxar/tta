@@ -150,10 +150,6 @@ func (s *fifo) getValue(ad *adapter) (value int32) {
 	return
 }
 
-func (s *fifo) writeStart() {
-	s.pos = 0
-}
-
 func (s *fifo) writeDone() error {
 	if s.pos > 0 {
 		if n, err := s.io.Write(s.buffer[:s.pos]); err != nil || n != int(s.pos) {
