@@ -10,6 +10,7 @@ const (
 	cpuArchSSE4
 )
 
+// CPUArch indicates currently cpu architecture: 0 general; 1 sse2 enabled; 2 sse4 enabled.
 var CPUArch = cpuArchUNKNOWN
 
 func init() {

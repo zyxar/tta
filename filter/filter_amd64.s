@@ -7,7 +7,7 @@ DATA LCDATA1<>+0x010(SB)/8, $0xfffffffeffffffff
 DATA LCDATA1<>+0x018(SB)/8, $0xfffffffcfffffffe
 GLOBL LCDATA1<>(SB), 8, $32
 
-TEXT ·__hybrid_filter_dec_sse4(SB), $16-56
+TEXT ·_HybridFilterDecSSE4(SB), $16-56
 
 	MOVQ in+0(FP), DI
 	MOVQ err+8(FP), SI
@@ -93,7 +93,7 @@ DATA LCDATA2<>+0x010(SB)/8, $0xfffffffeffffffff
 DATA LCDATA2<>+0x018(SB)/8, $0xfffffffcfffffffe
 GLOBL LCDATA2<>(SB), 8, $32
 
-TEXT ·__hybrid_filter_enc_sse4(SB), $16-56
+TEXT ·_HybridFilterEncSSE4(SB), $16-56
 
 	MOVQ in+0(FP), DI
 	MOVQ err+8(FP), SI
@@ -180,7 +180,7 @@ DATA LCDATA3<>+0x010(SB)/8, $0xfffffffeffffffff
 DATA LCDATA3<>+0x018(SB)/8, $0xfffffffcfffffffe
 GLOBL LCDATA3<>(SB), 8, $32
 
-TEXT ·__hybrid_filter_dec_sse2(SB), $16-56
+TEXT ·_HybridFilterDecSSE2(SB), $16-56
 
 	MOVQ in+0(FP), DI
 	MOVQ err+8(FP), SI
@@ -278,7 +278,7 @@ DATA LCDATA4<>+0x010(SB)/8, $0xfffffffeffffffff
 DATA LCDATA4<>+0x018(SB)/8, $0xfffffffcfffffffe
 GLOBL LCDATA4<>(SB), 8, $32
 
-TEXT ·__hybrid_filter_enc_sse2(SB), $16-56
+TEXT ·_HybridFilterEncSSE2(SB), $16-56
 
 	MOVQ in+0(FP), DI
 	MOVQ err+8(FP), SI
