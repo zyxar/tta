@@ -8,13 +8,19 @@ import (
 )
 
 //go:noescape
-func _HybridFilterDecSSE4(in, err, qm, dx, dl unsafe.Pointer, round int32, shift uint32)
+func _HybridFilterDecodeSSE4(fs, in unsafe.Pointer)
 
 //go:noescape
-func _HybridFilterEncSSE4(in, err, qm, dx, dl unsafe.Pointer, round int32, shift uint32)
+func _HybridFilterEncodeSSE4(fs, in unsafe.Pointer)
 
 //go:noescape
-func _HybridFilterDecSSE2(in, err, qm, dx, dl unsafe.Pointer, round int32, shift uint32)
+func _HybridFilterDecodeSSE2(fs, in unsafe.Pointer)
 
 //go:noescape
-func _HybridFilterEncSSE2(in, err, qm, dx, dl unsafe.Pointer, round int32, shift uint32)
+func _HybridFilterEncodeSSE2(fs, in unsafe.Pointer)
+
+//go:noescape
+func _HybridFilterDecodeCompat(fs, in unsafe.Pointer)
+
+//go:noescape
+func _HybridFilterEncodeCompat(fs, in unsafe.Pointer)

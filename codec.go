@@ -27,7 +27,7 @@ func (a *adapter) init(k0, k1 uint32) {
 }
 
 type codec struct {
-	filter  filter.Filter
+	filter  *filter.Filter
 	adapter adapter
 	prev    int32
 }

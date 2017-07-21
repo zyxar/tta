@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime/pprof"
 	"time"
 
 	"github.com/zyxar/tta"
@@ -13,6 +14,7 @@ import (
 var (
 	help, decode, encode bool
 	passwd               string
+	cpuprofile           string
 )
 
 func init() {
@@ -20,6 +22,7 @@ func init() {
 	flag.BoolVar(&decode, "decode", false, "decode file")
 	flag.BoolVar(&help, "help", false, "print this help")
 	flag.StringVar(&passwd, "passwd", "", "specify password (optional)")
+	flag.StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 }
 
 func main() {
@@ -29,6 +32,14 @@ func main() {
 		fmt.Fprintf(os.Stderr, "\rUsage of gotta: [encode|decode] [passwd PASSWORD] INPUT_FILE OUTPUT_FILE\n\n")
 		flag.PrintDefaults()
 		return
+	}
+	if cpuprofile != "" {
+		f, err := os.Create(cpuprofile)
+		if err != nil {
+			panic(err.Error())
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
 	}
 	infile := flag.Arg(0)
 	outfile := flag.Arg(1)
