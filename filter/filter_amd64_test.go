@@ -1,3 +1,6 @@
+//+build !noasm !appengine
+//+build amd64
+
 package filter
 
 import (
@@ -24,7 +27,7 @@ func BenchmarkEncodeSSE2(b *testing.B) {
 	})
 }
 
-func BenchmarkEncodeCompat(b *testing.B) {
+func BenchmarkEncodeCompatX64(b *testing.B) {
 	f := New([8]byte{1, 2, 3, 4, 5, 6, 7, 8}, 8)
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
@@ -54,7 +57,7 @@ func BenchmarkDecodeSSE2(b *testing.B) {
 	})
 }
 
-func BenchmarkDecodeCompat(b *testing.B) {
+func BenchmarkDecodeCompatX64(b *testing.B) {
 	f := New([8]byte{1, 2, 3, 4, 5, 6, 7, 8}, 8)
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
