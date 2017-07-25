@@ -54,7 +54,7 @@ type ExtHeader struct {
 	} // WaveSubformat
 }
 
-func NewHeader(dataSize, nch, sps, bps, smpSize uint32) *Header {
+func NewHeader(dataSize uint32, nch uint16, sps uint32, bps uint16, smpSize uint16) *Header {
 	return &Header{
 		ChunkId:       magicRiff,
 		ChunkSize:     dataSize + 36,
@@ -62,11 +62,11 @@ func NewHeader(dataSize, nch, sps, bps, smpSize uint32) *Header {
 		SubchunkId:    magicFormat,
 		SubchunkSize:  16,
 		AudioFormat:   1,
-		NumChannels:   uint16(nch),
+		NumChannels:   nch,
 		SampleRate:    sps,
-		ByteRate:      sps * smpSize,
-		BlockAlign:    uint16(smpSize),
-		BitsPerSample: uint16(bps),
+		ByteRate:      sps * uint32(smpSize),
+		BlockAlign:    smpSize,
+		BitsPerSample: bps,
 	}
 }
 
@@ -157,7 +157,7 @@ func (w *Header) Read(fd io.ReadSeeker) (subchunkSize uint32, err error) {
 	return
 }
 
-func (w *Header) Write(fd io.Writer, size uint32) (err error) {
+func (w *Header) Write(fd io.Writer) (err error) {
 	var writeLen int
 	// Write WAVE header
 	if writeLen, err = fd.Write(w.Bytes()); err != nil {
@@ -167,7 +167,7 @@ func (w *Header) Write(fd io.Writer, size uint32) (err error) {
 		return
 	}
 	// Write Subchunk header
-	subchunkHdr := SubchunkHeader{magicChunk, size}
+	subchunkHdr := SubchunkHeader{magicChunk, w.ChunkSize - 36}
 	if writeLen, err = fd.Write(subchunkHdr.Bytes()); err != nil {
 		return
 	} else if writeLen != int(unsafe.Sizeof(subchunkHdr)) {
