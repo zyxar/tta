@@ -14,8 +14,8 @@ type Filter struct {
 type codec func(fs *Filter, in *int32)
 
 var (
-	decode codec
-	encode codec
+	decode codec = CompatDecode
+	encode codec = CompatEncode
 )
 
 // New creates a Filter based on data and shift
@@ -42,7 +42,7 @@ func (f *Filter) Encode(in *int32) {
 	encode(f, in)
 }
 
-func decodeCompat(f *Filter, in *int32) {
+func CompatDecode(f *Filter, in *int32) {
 	pa := f.dl[:]
 	pb := f.qm[:]
 	pm := f.dx[:]
@@ -92,7 +92,7 @@ func decodeCompat(f *Filter, in *int32) {
 	pa[4] += pa[5]
 }
 
-func encodeCompat(f *Filter, in *int32) {
+func CompatEncode(f *Filter, in *int32) {
 	pa := f.dl[:]
 	pb := f.qm[:]
 	pm := f.dx[:]

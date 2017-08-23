@@ -1,3 +1,5 @@
+//+build amd64
+
 package filter
 
 import (
@@ -6,13 +8,13 @@ import (
 
 func init() {
 	if cpuid.CPU.SSE4() {
-		encode = EncodeSSE4
-		decode = DecodeSSE4
+		encode = SSE4Encode
+		decode = SSE4Decode
 	} else if cpuid.CPU.SSE2() {
-		encode = EncodeSSE2
-		decode = DecodeSSE2
+		encode = SSE2Encode
+		decode = SSE2Decode
 	} else {
-		encode = EncodeCompat
-		decode = DecodeCompat
+		encode = X64Encode
+		decode = X64Decode
 	}
 }

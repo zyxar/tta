@@ -7,62 +7,62 @@ import (
 	"testing"
 )
 
-func BenchmarkEncodeSSE4(b *testing.B) {
+func BenchmarkSSE4Encode(b *testing.B) {
 	f := New([8]byte{1, 2, 3, 4, 5, 6, 7, 8}, 8)
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			EncodeSSE4(f, &in)
+			SSE4Encode(f, &in)
 		}
 	})
 }
 
-func BenchmarkEncodeSSE2(b *testing.B) {
+func BenchmarkSSE2Encode(b *testing.B) {
 	f := New([8]byte{1, 2, 3, 4, 5, 6, 7, 8}, 8)
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			EncodeSSE2(f, &in)
+			SSE2Encode(f, &in)
 		}
 	})
 }
 
-func BenchmarkEncodeCompatX64(b *testing.B) {
+func BenchmarkX64Encode(b *testing.B) {
 	f := New([8]byte{1, 2, 3, 4, 5, 6, 7, 8}, 8)
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			EncodeCompat(f, &in)
+			X64Encode(f, &in)
 		}
 	})
 }
 
-func BenchmarkDecodeSSE4(b *testing.B) {
+func BenchmarkSSE4Decode(b *testing.B) {
 	f := New([8]byte{1, 2, 3, 4, 5, 6, 7, 8}, 8)
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			DecodeSSE4(f, &in)
+			SSE4Decode(f, &in)
 		}
 	})
 }
 
-func BenchmarkDecodeSSE2(b *testing.B) {
+func BenchmarkSSE2Decode(b *testing.B) {
 	f := New([8]byte{1, 2, 3, 4, 5, 6, 7, 8}, 8)
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			DecodeSSE2(f, &in)
+			SSE2Decode(f, &in)
 		}
 	})
 }
 
-func BenchmarkDecodeCompatX64(b *testing.B) {
+func BenchmarkX64Decode(b *testing.B) {
 	f := New([8]byte{1, 2, 3, 4, 5, 6, 7, 8}, 8)
 	var in int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			DecodeCompat(f, &in)
+			X64Decode(f, &in)
 		}
 	})
 }
