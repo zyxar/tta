@@ -49,15 +49,18 @@ func main() {
 		return
 	}
 	defer input.Close()
-	if len(outfile) == 0 {
+	if outfile == "" {
 		outfile = path.Base(infile)
 		outfile = outfile[:len(outfile)-len(path.Ext(outfile))]
-	}
-	if len(path.Ext(outfile)) == 0 {
+		ext := path.Ext(outfile)
 		if decode {
-			outfile += ".wav"
+			if ext != ".wav" {
+				outfile += ".wav"
+			}
 		} else {
-			outfile += ".tta"
+			if ext != ".tta" {
+				outfile += ".tta"
+			}
 		}
 	}
 	if _, err = os.Stat(outfile); err == nil || !os.IsNotExist(err) {
