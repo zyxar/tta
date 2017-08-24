@@ -40,7 +40,7 @@ func Decompress(infile io.ReadWriteSeeker, outfile io.WriteSeeker, passwd string
 	smpSize := info.nch * ((info.bps + 7) / 8)
 	dataSize := info.samples * smpSize
 	waveHdr := wave.NewHeader(dataSize, uint16(info.nch), info.sps, uint16(info.bps), uint16(smpSize))
-	if err = waveHdr.Write(outfile); err != nil {
+	if _, err = waveHdr.WriteTo(outfile); err != nil {
 		return
 	}
 	bufSize := pcmBufferLength * smpSize

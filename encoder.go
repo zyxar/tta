@@ -29,10 +29,8 @@ type Encoder struct {
 }
 
 func Compress(infile io.ReadSeeker, outfile io.ReadWriteSeeker, passwd string, cb Callback) (err error) {
-	waveHdr := wave.Header{}
-	var dataSize uint32
-	if dataSize, err = waveHdr.Read(infile); err != nil {
-		err = errRead
+	waveHdr, dataSize, err := wave.ReadHeader(infile)
+	if err != nil {
 		return
 	} else if dataSize >= 0x7FFFFFFF {
 		err = fmt.Errorf("incorrect data size info in wav file: %x", dataSize)
