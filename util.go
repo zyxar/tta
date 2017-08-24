@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 )
 
+var le = binary.LittleEndian
+
 func computeKeyDigits(p []byte) [8]byte {
 	var crcLow, crcHigh uint32 = 0xFFFFFFFF, 0xFFFFFFFF
 	for i := 0; i < len(p); i++ {
@@ -46,22 +48,27 @@ func convertPassword(src string) []byte {
 func writeBuffer(src int32, p []byte, depth uint32) {
 	switch depth {
 	case 2:
-		binary.LittleEndian.PutUint16(p, uint16(0xFFFF&src))
+		le.PutUint16(p, uint16(0xFFFF&src))
 	case 1:
 		p[0] = byte(0xFF & src)
+	case 3:
+		le.PutUint16(p, uint16(0xFFFF&src))
+		p[2] = byte(0xFF & (src >> 16))
 	default:
-		binary.LittleEndian.PutUint32(p, uint32(0xFFFF&src))
+		le.PutUint32(p, uint32(src))
 	}
 }
 
 func readBuffer(p []byte, depth uint32) (v int32) {
 	switch depth {
 	case 2:
-		v = int32(int16(binary.LittleEndian.Uint16(p)))
+		v = int32(int16(le.Uint16(p)))
 	case 1:
 		v = int32(int8(p[0]))
+	case 3:
+		v = int32(le.Uint16(p)) | int32(uint32(p[2])<<16)
 	default:
-		v = int32(binary.LittleEndian.Uint32(p))
+		v = int32(le.Uint32(p))
 	}
 	return
 }
